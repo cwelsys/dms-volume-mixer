@@ -10,7 +10,7 @@ import qs.Modules.Plugins
 PluginComponent {
     id: root
 
-    popoutWidth: 360
+    popoutWidth: 400
 
     readonly property real masterVolume: AudioService.sink?.audio
         ? Math.round(AudioService.sink.audio.volume * 100)
@@ -366,15 +366,8 @@ PluginComponent {
 
                         Row {
                             width: parent.width
-                            height: 28
+                            height: 20
 
-                            StyledText {
-                                text: "Playback"
-                                font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.surfaceVariantText
-                                font.weight: Font.Medium
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
                         }
 
                         Repeater {
