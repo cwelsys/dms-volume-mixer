@@ -6,7 +6,7 @@ Standalone volume mixer for [dms](https://github.com/AvengeMedia/DankMaterialShe
 
 ## Install
 
-Available live in your shell via the [DMS Plugin Registry](https://github.com/AvengeMedia/dms-plugin-registry).
+Available live in your shell via the [DMS Plugin Registry](https://danklinux.com/plugins).
 
 ## Contributing
 
