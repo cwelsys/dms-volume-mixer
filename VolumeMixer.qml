@@ -17,6 +17,22 @@ PluginComponent {
         : 0
     readonly property bool masterMuted: AudioService.sink?.audio?.muted ?? false
 
+    function adjustVolumeByScroll(wheelEvent) {
+        if (!AudioService.sink?.audio)
+            return;
+        let currentVolume = AudioService.sink.audio.volume * 100;
+        let maxVol = AudioService.sinkMaxVolume;
+        let newVolume;
+        if (wheelEvent.angleDelta.y > 0)
+            newVolume = Math.min(maxVol, currentVolume + 5);
+        else
+            newVolume = Math.max(0, currentVolume - 5);
+        AudioService.sink.audio.muted = false;
+        AudioService.sink.audio.volume = newVolume / 100;
+        AudioService.volumeChanged();
+        wheelEvent.accepted = true;
+    }
+
     function pillIcon() {
         if ((root.pluginData?.pillIcon ?? "volume") === "mixer")
             return "tune";
@@ -28,45 +44,61 @@ PluginComponent {
     }
 
     horizontalBarPill: Component {
-        Row {
-            spacing: Theme.spacingS
+        MouseArea {
+            acceptedButtons: Qt.NoButton
+            implicitWidth: hPillRow.implicitWidth
+            implicitHeight: hPillRow.implicitHeight
+            onWheel: wheel => root.adjustVolumeByScroll(wheel)
 
-            DankIcon {
-                visible: (root.pluginData?.pillDisplay ?? "both") !== "percent"
-                name: root.pillIcon()
-                size: Theme.barIconSize(root.barThickness, -4)
-                color: Theme.widgetIconColor
-                anchors.verticalCenter: parent.verticalCenter
-            }
+            Row {
+                id: hPillRow
+                spacing: Theme.spacingS
 
-            StyledText {
-                visible: (root.pluginData?.pillDisplay ?? "both") !== "icon"
-                text: root.masterVolume + "%"
-                font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig?.fontScale)
-                color: Theme.widgetTextColor
-                anchors.verticalCenter: parent.verticalCenter
+                DankIcon {
+                    visible: (root.pluginData?.pillDisplay ?? "both") !== "percent"
+                    name: root.pillIcon()
+                    size: Theme.barIconSize(root.barThickness, -4)
+                    color: Theme.widgetIconColor
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                StyledText {
+                    visible: (root.pluginData?.pillDisplay ?? "both") !== "icon"
+                    text: root.masterVolume + "%"
+                    font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig?.fontScale)
+                    color: Theme.widgetTextColor
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
         }
     }
 
     verticalBarPill: Component {
-        Column {
-            spacing: 1
+        MouseArea {
+            acceptedButtons: Qt.NoButton
+            implicitWidth: vPillCol.implicitWidth
+            implicitHeight: vPillCol.implicitHeight
+            onWheel: wheel => root.adjustVolumeByScroll(wheel)
 
-            DankIcon {
-                visible: (root.pluginData?.pillDisplay ?? "both") !== "percent"
-                name: root.pillIcon()
-                size: Theme.barIconSize(root.barThickness, -2)
-                color: Theme.widgetIconColor
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
+            Column {
+                id: vPillCol
+                spacing: 1
 
-            StyledText {
-                visible: (root.pluginData?.pillDisplay ?? "both") !== "icon"
-                text: root.masterVolume + "%"
-                font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig?.fontScale)
-                color: Theme.widgetTextColor
-                anchors.horizontalCenter: parent.horizontalCenter
+                DankIcon {
+                    visible: (root.pluginData?.pillDisplay ?? "both") !== "percent"
+                    name: root.pillIcon()
+                    size: Theme.barIconSize(root.barThickness, -2)
+                    color: Theme.widgetIconColor
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+
+                StyledText {
+                    visible: (root.pluginData?.pillDisplay ?? "both") !== "icon"
+                    text: root.masterVolume + "%"
+                    font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig?.fontScale)
+                    color: Theme.widgetTextColor
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
             }
         }
     }

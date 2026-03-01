@@ -2,7 +2,7 @@
   "id": "volumeMixer",
   "name": "Volume Mixer",
   "description": "Standalone volume mixer for your bar",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "cwel",
   "repo": "https://github.com/cwelsys/dms-volume-mixer",
   "icon": "tune",
