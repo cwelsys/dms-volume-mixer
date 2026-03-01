@@ -6,7 +6,7 @@
   "author": "cwel",
   "repo": "https://github.com/cwelsys/dms-volume-mixer",
   "icon": "tune",
-  "type": "widget",
+  "license": "MIT",
   "component": "./VolumeMixer.qml",
   "settings": "./VolumeMixerSettings.qml",
   "permissions": [
