@@ -94,6 +94,114 @@ PluginSettings {
     }
 
     Column {
+        id: streamAliasSection
+        width: parent.width
+        spacing: Theme.spacingXS
+
+        property var aliases: ({})
+
+        function reload() {
+            aliases = root.loadValue("streamAliases", {})
+        }
+
+        function save(obj) {
+            aliases = obj
+            root.saveValue("streamAliases", obj)
+        }
+
+        Component.onCompleted: reload()
+
+        StyledText {
+            text: "Stream Aliases"
+            font.pixelSize: Theme.fontSizeMedium
+            font.weight: Font.Medium
+            color: Theme.surfaceText
+        }
+
+        StyledText {
+            text: "Custom display names for audio streams (matched by binary, node name, or app name)"
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.surfaceVariantText
+            width: parent.width
+            wrapMode: Text.WordWrap
+        }
+
+        Repeater {
+            model: Object.keys(streamAliasSection.aliases)
+
+            Row {
+                required property string modelData
+                width: streamAliasSection.width
+                height: 28
+                spacing: Theme.spacingS
+
+                StyledText {
+                    text: modelData + "  →  " + streamAliasSection.aliases[modelData]
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceText
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - removeBtn.width - parent.spacing
+                    elide: Text.ElideRight
+                }
+
+                DankActionButton {
+                    id: removeBtn
+                    anchors.verticalCenter: parent.verticalCenter
+                    iconName: "close"
+                    iconSize: 12
+                    buttonSize: 20
+                    iconColor: Theme.error
+                    onClicked: {
+                        let a = Object.assign({}, streamAliasSection.aliases)
+                        delete a[modelData]
+                        streamAliasSection.save(a)
+                    }
+                }
+            }
+        }
+
+        Row {
+            width: parent.width
+            spacing: Theme.spacingS
+
+            DankTextField {
+                id: aliasKeyField
+                width: (parent.width - addAliasBtn.width - parent.spacing * 2) / 2
+                height: 28
+                placeholderText: "identifier"
+                font.pixelSize: Theme.fontSizeSmall
+                onAccepted: if (addAliasBtn.enabled) addAliasBtn.clicked()
+            }
+
+            DankTextField {
+                id: aliasValueField
+                width: aliasKeyField.width
+                height: 28
+                placeholderText: "display name"
+                font.pixelSize: Theme.fontSizeSmall
+                onAccepted: if (addAliasBtn.enabled) addAliasBtn.clicked()
+            }
+
+            DankActionButton {
+                id: addAliasBtn
+                anchors.verticalCenter: parent.verticalCenter
+                iconName: "add"
+                iconSize: 14
+                buttonSize: 28
+                enabled: aliasKeyField.text.trim() !== "" && aliasValueField.text.trim() !== ""
+                iconColor: enabled ? Theme.primary : Theme.surfaceVariantText
+                onClicked: {
+                    let a = Object.assign({}, streamAliasSection.aliases)
+                    a[aliasKeyField.text.trim()] = aliasValueField.text.trim()
+                    streamAliasSection.save(a)
+                    aliasKeyField.clear()
+                    aliasValueField.clear()
+                }
+            }
+        }
+    }
+
+    Column {
         id: maxVolSection
         width: parent.width
         spacing: Theme.spacingS

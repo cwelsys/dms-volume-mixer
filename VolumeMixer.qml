@@ -472,8 +472,14 @@ PluginComponent {
                                         StyledText {
                                             id: titleText
                                             text: {
-                                                const media = modelData.properties?.["media.name"] || "";
-                                                const app = AudioService.displayName(modelData);
+                                                const props = modelData.properties;
+                                                const aliases = root.pluginData?.streamAliases ?? {};
+                                                const binary = props?.["application.process.binary"] || "";
+                                                const appName = props?.["application.name"] || "";
+                                                const nodeName = props?.["node.name"] || "";
+                                                const alias = aliases[binary] || aliases[nodeName] || aliases[appName];
+                                                const app = alias || AudioService.displayName(modelData);
+                                                const media = props?.["media.name"] || "";
                                                 return media ? app + ": " + media : app;
                                             }
                                             font.pixelSize: Theme.fontSizeMedium
