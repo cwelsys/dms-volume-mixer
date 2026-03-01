@@ -1,6 +1,6 @@
 # Volume Mixer
 
-Standalone volume mixer for [dms](https://github.com/AvengeMedia/dankshell). Control master volume, switch audio sinks, and adjust per-app playback levels from your bar.
+Standalone volume mixer for [dms](https://github.com/AvengeMedia/DankMaterialShell). Control master volume, switch audio sinks, and adjust per-app playback levels from your bar.
 
 ![screenshot](assets/screenshot.png)
 
