@@ -1,0 +1,319 @@
+import QtQuick
+import QtQuick.Layouts
+import Quickshell
+import qs.Common
+import qs.Services
+import qs.Widgets
+
+Column {
+    id: streamRow
+
+    required property var group
+    property int maxVol: 100
+    property bool expanded: false
+
+    readonly property var nodes: group && group.nodes ? group.nodes : []
+    readonly property string appName: group ? group.appName : ""
+    readonly property string iconValue: group ? group.iconValue : ""
+    readonly property bool expandable: nodes.length > 1
+
+    readonly property string subtitle: {
+        const d = group ? group.descriptors : [];
+        if (nodes.length > 1) {
+            const first = d.length ? d[0] : "";
+            const allSame = first !== "" && d.every(x => x === first);
+            return allSame ? first : (nodes.length + " streams");
+        }
+        return d.length ? d[0] : "";
+    }
+
+    readonly property real groupVolumePercent: {
+        let mx = 0;
+        for (let i = 0; i < nodes.length; i++) {
+            const a = nodes[i].audio;
+            if (a && a.volume > mx)
+                mx = a.volume;
+        }
+        return Math.round(mx * 100);
+    }
+
+    readonly property bool allMuted: nodes.length === 0 ? true : nodes.every(n => !n.audio || n.audio.muted)
+
+    function setGroupVolume(percent) {
+        SessionData.suppressOSDTemporarily();
+        for (let i = 0; i < nodes.length; i++) {
+            const a = nodes[i].audio;
+            if (!a)
+                continue;
+            a.volume = percent / 100;
+            if (percent > 0 && a.muted)
+                a.muted = false;
+        }
+        AudioService.playVolumeChangeSoundIfEnabled();
+    }
+
+    function toggleGroupMute() {
+        SessionData.suppressOSDTemporarily();
+        const anyUnmuted = nodes.some(n => n.audio && !n.audio.muted);
+        for (let i = 0; i < nodes.length; i++) {
+            const a = nodes[i].audio;
+            if (a)
+                a.muted = anyUnmuted;
+        }
+    }
+
+    function resetGroup() {
+        SessionData.suppressOSDTemporarily();
+        for (let i = 0; i < nodes.length; i++) {
+            const a = nodes[i].audio;
+            if (!a)
+                continue;
+            a.volume = 1.0;
+            a.muted = false;
+        }
+    }
+
+    width: parent ? parent.width : 0
+    spacing: Theme.spacingXS
+
+    // === Header (aggregate) row ===
+    Rectangle {
+        width: parent.width
+        height: 50
+        radius: Theme.cornerRadius
+        color: Theme.withAlpha(Theme.surfaceContainerHighest, Theme.popupTransparency)
+        border.width: 0
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: Theme.spacingM
+            anchors.rightMargin: Theme.spacingM
+            spacing: Theme.spacingS
+
+            AppIconRenderer {
+                Layout.preferredWidth: Theme.iconSize
+                Layout.preferredHeight: Theme.iconSize
+                Layout.alignment: Qt.AlignVCenter
+                iconValue: streamRow.iconValue
+                iconSize: Theme.iconSize
+                fallbackText: streamRow.appName ? streamRow.appName.charAt(0).toUpperCase() : "?"
+            }
+
+            Column {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 0
+
+                StyledText {
+                    width: parent.width
+                    text: streamRow.appName
+                    font.pixelSize: Theme.fontSizeMedium
+                    color: Theme.surfaceText
+                    elide: Text.ElideRight
+                    wrapMode: Text.NoWrap
+                }
+
+                StyledText {
+                    width: parent.width
+                    visible: streamRow.subtitle !== ""
+                    text: streamRow.subtitle
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceVariantText
+                    elide: Text.ElideRight
+                    wrapMode: Text.NoWrap
+                }
+            }
+
+            // Expand/collapse chevron (only when >1 stream)
+            Rectangle {
+                Layout.preferredWidth: Theme.iconSize + Theme.spacingS * 2
+                Layout.preferredHeight: Theme.iconSize + Theme.spacingS * 2
+                Layout.alignment: Qt.AlignVCenter
+                visible: streamRow.expandable
+                radius: Theme.cornerRadius
+                color: chevronArea.containsMouse ? Theme.primaryHover : "transparent"
+
+                MouseArea {
+                    id: chevronArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: streamRow.expanded = !streamRow.expanded
+                }
+
+                DankIcon {
+                    anchors.centerIn: parent
+                    name: streamRow.expanded ? "expand_less" : "expand_more"
+                    size: Theme.iconSize - 4
+                    color: Theme.surfaceVariantText
+                }
+            }
+
+            Rectangle {
+                Layout.preferredWidth: Theme.iconSize + Theme.spacingS * 2
+                Layout.preferredHeight: Theme.iconSize + Theme.spacingS * 2
+                Layout.alignment: Qt.AlignVCenter
+                radius: Theme.cornerRadius
+                color: resetArea.containsMouse ? Theme.primaryHover : "transparent"
+
+                DankRipple { id: resetRipple; cornerRadius: parent.radius }
+
+                MouseArea {
+                    id: resetArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onPressed: mouse => resetRipple.trigger(mouse.x, mouse.y)
+                    onClicked: streamRow.resetGroup()
+                }
+
+                DankIcon {
+                    anchors.centerIn: parent
+                    name: "replay"
+                    size: Theme.iconSize - 6
+                    color: resetArea.containsMouse ? Theme.primary : Theme.surfaceVariantText
+                }
+            }
+
+            Rectangle {
+                Layout.preferredWidth: Theme.iconSize + Theme.spacingS * 2
+                Layout.preferredHeight: Theme.iconSize + Theme.spacingS * 2
+                Layout.alignment: Qt.AlignVCenter
+                radius: Theme.cornerRadius
+                color: muteArea.containsMouse ? Theme.primaryHover : "transparent"
+
+                DankRipple { id: muteRipple; cornerRadius: parent.radius }
+
+                MouseArea {
+                    id: muteArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onPressed: mouse => muteRipple.trigger(mouse.x, mouse.y)
+                    onClicked: streamRow.toggleGroupMute()
+                }
+
+                DankIcon {
+                    anchors.centerIn: parent
+                    name: {
+                        if (streamRow.allMuted)
+                            return "volume_off";
+                        if (streamRow.groupVolumePercent === 0)
+                            return "volume_mute";
+                        if (streamRow.groupVolumePercent <= 33)
+                            return "volume_down";
+                        return "volume_up";
+                    }
+                    size: Theme.iconSize - 4
+                    color: (!streamRow.allMuted && streamRow.groupVolumePercent > 0) ? Theme.primary : Theme.surfaceText
+                }
+            }
+
+            DankSlider {
+                id: slider
+                Layout.preferredWidth: 100
+                Layout.preferredHeight: 40
+                Layout.alignment: Qt.AlignVCenter
+                minimum: 0
+                maximum: streamRow.maxVol
+                showValue: true
+                unit: "%"
+                valueOverride: streamRow.groupVolumePercent
+                thumbOutlineColor: Theme.surfaceContainer
+
+                Binding on value {
+                    value: Math.min(streamRow.maxVol, streamRow.groupVolumePercent)
+                    when: !slider.isDragging
+                }
+
+                onSliderValueChanged: newValue => streamRow.setGroupVolume(newValue)
+            }
+        }
+    }
+
+    // === Per-stream sub-rows (expanded) ===
+    Repeater {
+        model: ScriptModel { values: streamRow.expanded ? streamRow.nodes : [] }
+        delegate: Rectangle {
+            required property var modelData
+            required property int index
+
+            readonly property string subLabel: {
+                const d = streamRow.group ? streamRow.group.descriptors : [];
+                const dv = (index < d.length) ? d[index] : "";
+                return dv !== "" ? dv : ("Stream " + (index + 1));
+            }
+
+            width: streamRow.width - Theme.spacingL
+            x: Theme.spacingL
+            height: 44
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingM
+                spacing: Theme.spacingS
+
+                StyledText {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                    text: subLabel
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceVariantText
+                    elide: Text.ElideRight
+                    wrapMode: Text.NoWrap
+                }
+
+                DankIcon {
+                    Layout.alignment: Qt.AlignVCenter
+                    name: (!modelData.audio || modelData.audio.muted) ? "volume_off" : "volume_up"
+                    size: Theme.iconSize - 6
+                    color: (modelData.audio && !modelData.audio.muted) ? Theme.primary : Theme.surfaceText
+
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (modelData.audio) {
+                                SessionData.suppressOSDTemporarily();
+                                modelData.audio.muted = !modelData.audio.muted;
+                            }
+                        }
+                    }
+                }
+
+                DankSlider {
+                    id: subSlider
+                    readonly property real pct: modelData.audio ? Math.round(modelData.audio.volume * 100) : 0
+                    Layout.preferredWidth: 90
+                    Layout.preferredHeight: 36
+                    Layout.alignment: Qt.AlignVCenter
+                    minimum: 0
+                    maximum: streamRow.maxVol
+                    showValue: true
+                    unit: "%"
+                    valueOverride: pct
+                    thumbOutlineColor: Theme.surfaceContainer
+
+                    Binding on value {
+                        value: Math.min(streamRow.maxVol, subSlider.pct)
+                        when: !subSlider.isDragging
+                    }
+
+                    onSliderValueChanged: newValue => {
+                        if (modelData.audio) {
+                            SessionData.suppressOSDTemporarily();
+                            modelData.audio.volume = newValue / 100;
+                            if (newValue > 0 && modelData.audio.muted)
+                                modelData.audio.muted = false;
+                            AudioService.playVolumeChangeSoundIfEnabled();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
