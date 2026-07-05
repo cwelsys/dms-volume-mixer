@@ -80,19 +80,6 @@ PluginSettings {
         }
     }
 
-    SelectionSetting {
-        settingKey: "sortOrder"
-        label: "Sort Order"
-        defaultValue: "name_asc"
-        options: [
-            { label: "Name (A–Z)",        value: "name_asc"    },
-            { label: "Name (Z–A)",        value: "name_desc"   },
-            { label: "Volume (High–Low)", value: "volume_desc" },
-            { label: "Volume (Low–High)", value: "volume_asc"  },
-            { label: "None",              value: "none"        }
-        ]
-    }
-
     Column {
         id: maxVolSection
         width: parent.width
