@@ -7,16 +7,12 @@ import "StreamLogic.js" as Logic
 QtObject {
     id: identity
 
-    // Entry resolution runs DesktopEntries.heuristicLookup per candidate, and
-    // both groupKey() and resolve() need it for every node. Cache per node for
-    // one buildGroups() pass; reset each pass so props that are still populating
-    // aren't cached as a permanent miss.
-    property var _entryCache: ({})
-
-    function _entryFor(node) {
+    // Per-pass entry cache passed in as `cache`. Plain JS, not a QML property:
+    // a reactive cache loops the streamGroups binding.
+    function _entryFor(node, cache) {
         var key = node ? node.id : "?";
-        if (key in identity._entryCache)
-            return identity._entryCache[key];
+        if (cache && (key in cache))
+            return cache[key];
         var props = (node && node.properties) ? node.properties : ({});
         var cands = Logic.buildCandidates(props);
         var entry = null;
@@ -27,7 +23,8 @@ QtObject {
                 break;
             }
         }
-        identity._entryCache[key] = entry;
+        if (cache)
+            cache[key] = entry;
         return entry;
     }
 
@@ -45,9 +42,9 @@ QtObject {
     }
 
     // -> { entry, appName, iconValue }
-    function resolve(node) {
+    function resolve(node, cache) {
         var props = (node && node.properties) ? node.properties : ({});
-        var entry = identity._entryFor(node);
+        var entry = identity._entryFor(node, cache);
         var cands = Logic.buildCandidates(props);
 
         var appName = (entry && entry.name) ? String(entry.name)
@@ -80,9 +77,9 @@ QtObject {
         return Logic.chooseDescriptor(props);
     }
 
-    function groupKey(node) {
+    function groupKey(node, cache) {
         var props = (node && node.properties) ? node.properties : ({});
-        var entry = identity._entryFor(node);
+        var entry = identity._entryFor(node, cache);
         if (entry && entry.id)
             return "entry:" + entry.id;
         if (props["application.process.id"])
@@ -96,10 +93,10 @@ QtObject {
 
     // -> [{ key, appName, iconValue, entry, nodes, descriptors }]
     function buildGroups(nodes) {
-        identity._entryCache = ({});
-        var groups = Logic.groupStreams(nodes, identity.groupKey);
+        var cache = ({});
+        var groups = Logic.groupStreams(nodes, function(n) { return identity.groupKey(n, cache); });
         return groups.map(function(g) {
-            var head = identity.resolve(g.nodes[0]);
+            var head = identity.resolve(g.nodes[0], cache);
             return {
                 key: g.key,
                 appName: head.appName,
