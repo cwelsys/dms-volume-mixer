@@ -7,7 +7,13 @@ function stripExe(name) {
 function isBoilerplateMediaName(name) {
     if (!name)
         return true;
-    return /playback|capture|audio|stream|alsa|pulse|pipewire/i.test(name);
+    // Generic audio-plumbing words.
+    if (/playback|capture|audio|stream|alsa|pulse|pipewire/i.test(name))
+        return true;
+    // Device node names (routing targets), e.g. bluez_output.<addr>.
+    if (/^(alsa|bluez|v4l2|libcamera)_|_(output|input)\./i.test(name))
+        return true;
+    return false;
 }
 
 // Ordered, de-duplicated candidate identity strings for a stream's props.
