@@ -341,6 +341,13 @@ PluginComponent {
                             }
                         }
 
+                        // Headroom for the first stream row's floating %-bubble.
+                        Item {
+                            width: 1
+                            height: 10
+                            visible: popoutItem.streamGroups.length > 0
+                        }
+
                         // === Applications ===
                         Repeater {
                             model: ScriptModel { values: popoutItem.streamGroups }
