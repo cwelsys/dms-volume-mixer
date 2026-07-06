@@ -90,13 +90,43 @@ Column {
             anchors.rightMargin: Theme.spacingM
             spacing: Theme.spacingS
 
-            AppIconRenderer {
+            // App icon; hovering it reveals a reset-to-100% overlay.
+            Item {
+                id: iconSlot
                 Layout.preferredWidth: Theme.iconSize
                 Layout.preferredHeight: Theme.iconSize
                 Layout.alignment: Qt.AlignVCenter
-                iconValue: streamRow.iconValue
-                iconSize: Theme.iconSize
-                fallbackText: streamRow.appName ? streamRow.appName.charAt(0).toUpperCase() : "?"
+
+                AppIconRenderer {
+                    anchors.fill: parent
+                    iconValue: streamRow.iconValue
+                    iconSize: Theme.iconSize
+                    fallbackText: streamRow.appName ? streamRow.appName.charAt(0).toUpperCase() : "?"
+                    opacity: resetArea.containsMouse ? 0.15 : 1.0
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: Theme.cornerRadius
+                    visible: resetArea.containsMouse
+                    color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.85)
+
+                    DankIcon {
+                        anchors.centerIn: parent
+                        name: "replay"
+                        size: Theme.iconSize - 6
+                        color: Theme.primary
+                    }
+                }
+
+                MouseArea {
+                    id: resetArea
+                    anchors.fill: parent
+                    anchors.margins: -Theme.spacingXS
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: streamRow.resetGroup()
+                }
             }
 
             Column {
@@ -146,32 +176,6 @@ Column {
                     name: streamRow.expanded ? "expand_less" : "expand_more"
                     size: Theme.iconSize - 4
                     color: Theme.surfaceVariantText
-                }
-            }
-
-            Rectangle {
-                Layout.preferredWidth: Theme.iconSize + Theme.spacingS * 2
-                Layout.preferredHeight: Theme.iconSize + Theme.spacingS * 2
-                Layout.alignment: Qt.AlignVCenter
-                radius: Theme.cornerRadius
-                color: resetArea.containsMouse ? Theme.primaryHover : "transparent"
-
-                DankRipple { id: resetRipple; cornerRadius: parent.radius }
-
-                MouseArea {
-                    id: resetArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onPressed: mouse => resetRipple.trigger(mouse.x, mouse.y)
-                    onClicked: streamRow.resetGroup()
-                }
-
-                DankIcon {
-                    anchors.centerIn: parent
-                    name: "replay"
-                    size: Theme.iconSize - 6
-                    color: resetArea.containsMouse ? Theme.primary : Theme.surfaceVariantText
                 }
             }
 
