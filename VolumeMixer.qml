@@ -37,7 +37,6 @@ PluginComponent {
             newVolume = Math.max(0, currentVolume - 5);
         AudioService.sink.audio.muted = false;
         AudioService.sink.audio.volume = newVolume / 100;
-        AudioService.volumeChanged();
         wheelEvent.accepted = true;
     }
 
@@ -139,7 +138,10 @@ PluginComponent {
 
                 readonly property var streamNodes: root.trackedStreamNodes
                 readonly property var streamGroups: streamIdentity.buildGroups(streamNodes)
-                readonly property var otherDevices: Pipewire.nodes.values.filter(n => n.audio && n.isSink && !n.isStream && n !== AudioService.sink)
+                readonly property var otherDevices: {
+                    const hidden = SessionData.hiddenOutputDeviceNames ?? [];
+                    return Pipewire.nodes.values.filter(n => n.audio && n.isSink && !n.isStream && n !== AudioService.sink && !hidden.includes(n.name));
+                }
 
                 // Fixed, unclipped top section so the master slider's value tooltip
                 // (which floats above the slider) is not cut off by the flickable clip.
@@ -219,7 +221,6 @@ PluginComponent {
                                     AudioService.sink.audio.volume = newValue / 100;
                                     if (newValue > 0 && AudioService.sink.audio.muted)
                                         AudioService.sink.audio.muted = false;
-                                    AudioService.volumeChanged();
                                 }
                             }
                         }
