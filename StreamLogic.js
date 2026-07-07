@@ -40,12 +40,9 @@ function buildCandidates(props) {
     return out;
 }
 
-// Semantic "what is this stream doing", or "" when nothing meaningful.
+// media.name, or "" when boilerplate. media.role is ignored (generic category labels).
 function chooseDescriptor(props) {
     props = props || {};
-    var role = props["media.role"];
-    if (role)
-        return String(role);
     var media = props["media.name"];
     if (media && !isBoilerplateMediaName(media))
         return String(media);
