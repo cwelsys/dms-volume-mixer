@@ -52,6 +52,33 @@ function chooseDescriptor(props) {
     return "";
 }
 
+// "Artist — Title", title alone, or "".
+function formatNowPlaying(title, artist) {
+    title = (title || "").trim();
+    artist = (artist || "").trim();
+    if (!title)
+        return "";
+    return artist ? (artist + " — " + title) : title;
+}
+
+// True when an MPRIS player's identity/desktopEntry matches the group (exact, not substring).
+function playerMatchesGroup(playerIdentity, playerDesktopEntry, entryId, candidates) {
+    var pd = (playerDesktopEntry || "").toLowerCase().trim();
+    var pi = (playerIdentity || "").toLowerCase().trim();
+    var eid = (entryId || "").toLowerCase().trim();
+    if (pd && eid && pd === eid)
+        return true;
+    candidates = candidates || [];
+    for (var i = 0; i < candidates.length; i++) {
+        var c = (candidates[i] || "").toLowerCase().trim();
+        if (c.length < 3)
+            continue;
+        if (pd === c || pi === c)
+            return true;
+    }
+    return false;
+}
+
 // Group nodes by keyOf(node), preserving first-seen order.
 function groupStreams(nodes, keyOf) {
     var map = {}, order = [];
