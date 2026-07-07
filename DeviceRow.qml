@@ -18,7 +18,7 @@ Rectangle {
     radius: Theme.cornerRadius
     color: deviceArea.containsMouse
         ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08)
-        : Theme.withAlpha(Theme.surfaceContainerHighest, Theme.popupTransparency)
+        : Theme.nestedSurface
     border.width: 0
 
     DankRipple { id: ripple; cornerRadius: deviceRow.radius }

@@ -250,7 +250,7 @@ PluginComponent {
                         width: parent.width
                         height: 50
                         radius: Theme.cornerRadius
-                        color: activeDeviceArea.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08) : Theme.withAlpha(Theme.surfaceContainerHighest, Theme.popupTransparency)
+                        color: activeDeviceArea.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08) : Theme.nestedSurface
 
                         DankRipple { id: activeDeviceRipple; cornerRadius: activeDeviceCard.radius }
 

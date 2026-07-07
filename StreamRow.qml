@@ -136,7 +136,7 @@ Column {
         width: parent.width
         height: 50
         radius: Theme.cornerRadius
-        color: Theme.withAlpha(Theme.surfaceContainerHighest, Theme.popupTransparency)
+        color: Theme.nestedSurface
         border.width: 0
 
         RowLayout {
@@ -312,7 +312,7 @@ Column {
             x: Theme.spacingL
             height: 44
             radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+            color: Theme.nestedSurface
 
             RowLayout {
                 anchors.fill: parent
