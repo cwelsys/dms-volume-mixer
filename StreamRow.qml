@@ -1,9 +1,11 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Services.Mpris
 import qs.Common
 import qs.Services
 import qs.Widgets
+import "StreamLogic.js" as Logic
 
 Column {
     id: streamRow
@@ -17,14 +19,67 @@ Column {
     readonly property string iconValue: group ? group.iconValue : ""
     readonly property bool expandable: nodes.length > 1
 
+    // Identity candidates for MPRIS correlation, from the head node.
+    readonly property var _candidates: {
+        const n = nodes.length ? nodes[0] : null;
+        const props = (n && n.properties) ? n.properties : ({});
+        return Logic.buildCandidates(props);
+    }
+    readonly property string _entryId: (group && group.entry && group.entry.id) ? String(group.entry.id) : ""
+
+    // First MPRIS player whose identity matches this group, or null.
+    readonly property var _mprisPlayer: {
+        const players = MprisController.availablePlayers;
+        if (!players)
+            return null;
+        for (let i = 0; i < players.length; i++) {
+            const p = players[i];
+            if (!p)
+                continue;
+            const de = ("desktopEntry" in p && p.desktopEntry) ? String(p.desktopEntry) : "";
+            if (Logic.playerMatchesGroup(p.identity, de, _entryId, _candidates))
+                return p;
+        }
+        return null;
+    }
+
+    // Header track: Playing or Paused (Stopped excluded).
+    readonly property string nowPlayingLoaded: {
+        const p = _mprisPlayer;
+        if (!p || !p.trackTitle || p.playbackState === MprisPlaybackState.Stopped)
+            return "";
+        return Logic.formatNowPlaying(p.trackTitle, p.trackArtist);
+    }
+
+    // Per-stream fill: only an actively Playing session, so a stale title never sticks to a blank stream.
+    readonly property string nowPlayingActive: {
+        const p = _mprisPlayer;
+        if (!p || !p.isPlaying)
+            return "";
+        return Logic.formatNowPlaying(p.trackTitle, p.trackArtist);
+    }
+
+    // Index of the sole descriptor-less stream in the group, or -1 if 0 or 2+.
+    readonly property int _soleBlankIndex: {
+        const d = group ? group.descriptors : [];
+        let idx = -1, count = 0;
+        for (let i = 0; i < d.length; i++) {
+            if (!d[i]) { count++; idx = i; }
+        }
+        return count === 1 ? idx : -1;
+    }
+
     readonly property string subtitle: {
         const d = group ? group.descriptors : [];
         if (nodes.length > 1) {
             const first = d.length ? d[0] : "";
             const allSame = first !== "" && d.every(x => x === first);
-            return allSame ? first : (nodes.length + " streams");
+            if (allSame)
+                // Homogeneous group: now-playing leads.
+                return nowPlayingLoaded !== "" ? nowPlayingLoaded : first;
+            return nodes.length + " streams";
         }
-        return d.length ? d[0] : "";
+        return nowPlayingLoaded !== "" ? nowPlayingLoaded : (d.length ? d[0] : "");
     }
 
     readonly property real groupVolumePercent: {
@@ -245,7 +300,12 @@ Column {
             readonly property string subLabel: {
                 const d = streamRow.group ? streamRow.group.descriptors : [];
                 const dv = (index < d.length) ? d[index] : "";
-                return dv !== "" ? dv : ("Stream " + (index + 1));
+                if (dv !== "")
+                    return dv;
+                // Only the sole blank stream, and only from an actively-playing session.
+                if (index === streamRow._soleBlankIndex && streamRow.nowPlayingActive !== "")
+                    return streamRow.nowPlayingActive;
+                return "Stream " + (index + 1);
             }
 
             width: streamRow.width - Theme.spacingL
