@@ -16,6 +16,24 @@ function isBoilerplateMediaName(name) {
     return false;
 }
 
+// "PathOfExileSteam" -> "Path Of Exile Steam". PipeWire reports the executable,
+// while desktop entries are named for the product, so the two only meet once the
+// run-together binary name is broken back into words.
+function splitCamel(name) {
+    return (name || "")
+        .replace(/[_\-.]+/g, " ")
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+// Launcher and build suffixes Steam/Wine append to the executable but that never
+// appear in the entry name: "Path Of Exile Steam" -> "Path Of Exile".
+function stripBuildSuffix(name) {
+    return (name || "").replace(/\s+(steam|launcher|shipping|win64|win32|x64|x86)$/i, "").trim();
+}
+
 // Ordered, de-duplicated candidate identity strings for a stream's props.
 // application.name / node.name before binary so Wine app names beat the loader.
 function buildCandidates(props) {
@@ -27,15 +45,24 @@ function buildCandidates(props) {
         props["application.process.binary"]
     ];
     var seen = {}, out = [];
-    for (var i = 0; i < raw.length; i++) {
-        var c = (raw[i] || "").trim();
+    function push(candidate) {
+        var c = (candidate || "").trim();
         if (!c)
-            continue;
+            return;
         var key = c.toLowerCase();
         if (seen[key])
-            continue;
+            return;
         seen[key] = true;
         out.push(c);
+    }
+    for (var i = 0; i < raw.length; i++)
+        push(raw[i]);
+    // Word-split variants go last so an exact id/binary match always wins.
+    var exact = out.slice();
+    for (var j = 0; j < exact.length; j++) {
+        var camel = splitCamel(exact[j]);
+        push(camel);
+        push(stripBuildSuffix(camel));
     }
     return out;
 }
