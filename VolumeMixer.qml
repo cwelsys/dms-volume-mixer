@@ -177,8 +177,10 @@ PluginComponent {
                                 cursorShape: Qt.PointingHandCursor
                                 onPressed: mouse => masterMuteRipple.trigger(mouse.x, mouse.y)
                                 onClicked: {
-                                    if (AudioService.sink?.audio)
+                                    if (AudioService.sink?.audio) {
+                                        SessionData.suppressOSDTemporarily();
                                         AudioService.sink.audio.muted = !AudioService.sink.audio.muted;
+                                    }
                                 }
                             }
 
@@ -218,9 +220,13 @@ PluginComponent {
 
                             onSliderValueChanged: newValue => {
                                 if (AudioService.sink?.audio) {
+                                    // Suppressing the OSD also gates AudioService's own
+                                    // volume-change sound, so play it back explicitly.
+                                    SessionData.suppressOSDTemporarily();
                                     AudioService.sink.audio.volume = newValue / 100;
                                     if (newValue > 0 && AudioService.sink.audio.muted)
                                         AudioService.sink.audio.muted = false;
+                                    AudioService.playVolumeChangeSoundIfEnabled();
                                 }
                             }
                         }
