@@ -351,7 +351,7 @@ PluginComponent {
 
                         // === Applications ===
                         Repeater {
-                            model: ScriptModel { values: popoutItem.streamGroups }
+                            model: ScriptModel { objectProp: "key"; values: popoutItem.streamGroups }
                             delegate: StreamRow {
                                 required property var modelData
                                 width: listColumn.width
