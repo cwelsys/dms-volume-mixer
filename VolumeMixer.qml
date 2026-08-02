@@ -228,12 +228,16 @@ PluginComponent {
                         StyledText {
                             id: masterPct
                             anchors.verticalCenter: parent.verticalCenter
-                            width: pctMetrics.width
+                            // TextMetrics reports a fractional advance while Text rounds its
+                            // own requirement up, so an exact-fit width elides "100%" to "100…".
+                            width: Math.ceil(pctMetrics.width) + 1
                             horizontalAlignment: Text.AlignRight
                             text: root.masterVolume + "%"
                             font.pixelSize: Theme.fontSizeSmall
                             font.weight: Font.Medium
                             color: Theme.surfaceText
+                            elide: Text.ElideNone
+                            wrapMode: Text.NoWrap
 
                             TextMetrics {
                                 id: pctMetrics
