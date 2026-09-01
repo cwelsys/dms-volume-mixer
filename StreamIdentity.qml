@@ -14,8 +14,17 @@ QtObject {
         return identity.steamAppIds.appIdFor(props["application.process.id"]);
     }
 
+    function _niriAppId(props) {
+        if (!CompositorService.isNiri)
+            return "";
+        return Logic.niriAppIdForPid(NiriService.windows, props["application.process.id"]);
+    }
+
     function _candidatesFor(props) {
         var cands = Logic.buildCandidates(props);
+        var niriAppId = identity._niriAppId(props);
+        if (niriAppId)
+            cands.unshift(niriAppId);
         var steamIcon = Logic.steamIconName(identity._steamAppId(props));
         if (steamIcon)
             cands.unshift(steamIcon);

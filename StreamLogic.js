@@ -62,6 +62,20 @@ function steamEntryMatcher(appId) {
     };
 }
 
+function niriAppIdForPid(windows, pid) {
+    if (!pid)
+        return "";
+    var target = Number(pid);
+    if (!isFinite(target))
+        return "";
+    var list = windows || [];
+    for (var i = 0; i < list.length; i++) {
+        if (list[i] && Number(list[i].pid) === target)
+            return String(list[i].app_id || "");
+    }
+    return "";
+}
+
 // Handed to AppIconRenderer when nothing resolved. The renderer re-resolves
 // iconValue through Paths.resolveIconPath, whose tail is a substring sweep over
 // every desktop entry -- passing an unresolved app name there is how "disco"
