@@ -16,6 +16,59 @@ function isBoilerplateMediaName(name) {
     return false;
 }
 
+// Steam exports these into the environment of everything it launches, Proton or
+// native, and /proc/<pid>/environ is NUL-separated. SteamAppId is preferred:
+// non-Steam shortcuts added to Steam report SteamAppId=0 alongside a synthesized
+// 64-bit SteamGameId, and only the latter appears in their desktop entry.
+function parseSteamAppId(environText) {
+    var vars = String(environText || "").split("\u0000");
+    var found = {};
+    for (var i = 0; i < vars.length; i++) {
+        var eq = vars[i].indexOf("=");
+        if (eq <= 0)
+            continue;
+        var key = vars[i].substring(0, eq);
+        if (key !== "SteamAppId" && key !== "STEAM_COMPAT_APP_ID" && key !== "SteamGameId")
+            continue;
+        var value = vars[i].substring(eq + 1).trim();
+        if (/^[0-9]+$/.test(value) && value !== "0" && !(key in found))
+            found[key] = value;
+    }
+    return found["SteamAppId"] || found["STEAM_COMPAT_APP_ID"] || found["SteamGameId"] || "";
+}
+
+// Steam names the icon it installs after the app id and writes the same string
+// into StartupWMClass on most of the entries it generates, so this is the join
+// key between a running game and its desktop entry.
+function steamIconName(appId) {
+    return appId ? "steam_icon_" + appId : "";
+}
+
+// Predicate matching the entry Steam generated for an app id, by the icon it
+// installs (present on every generated entry) or by the steam://rungameid Exec
+// (which also covers non-Steam shortcuts, whose Icon is an absolute path).
+// Equality on a unique key, not a substring sweep: exactly one entry can match.
+function steamEntryMatcher(appId) {
+    if (!appId)
+        return null;
+    var icon = steamIconName(appId);
+    var exec = new RegExp("rungameid/" + appId + "(?![0-9])");
+    return function(entry) {
+        if (!entry)
+            return false;
+        if (entry.icon && String(entry.icon) === icon)
+            return true;
+        return exec.test(entry.execString || "");
+    };
+}
+
+// Handed to AppIconRenderer when nothing resolved. The renderer re-resolves
+// iconValue through Paths.resolveIconPath, whose tail is a substring sweep over
+// every desktop entry -- passing an unresolved app name there is how "disco"
+// ends up wearing avahi-discover's ethernet icon. This matches no entry and no
+// theme icon, so the renderer stays visible and draws the letter badge.
+var UNRESOLVED_ICON = "volumemixer-unresolved-app-icon";
+
 // "PathOfExileSteam" -> "Path Of Exile Steam". PipeWire reports the executable,
 // while desktop entries are named for the product, so the two only meet once the
 // run-together binary name is broken back into words.

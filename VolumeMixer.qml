@@ -25,6 +25,11 @@ PluginComponent {
 
     PwObjectTracker { objects: root.trackedStreamNodes }
 
+    // Root-level, not inside the popout: the popout Component is torn down on
+    // close, and the PID -> Steam app id cache should outlive it rather than
+    // re-reading /proc every time the mixer is opened.
+    StreamIdentity { id: streamIdentity }
+
     function adjustVolumeByScroll(wheelEvent) {
         if (!AudioService.sink?.audio)
             return;
@@ -134,17 +139,16 @@ PluginComponent {
                     return (typeof stored === "number" && stored >= 100) ? stored : 200;
                 }
 
-                StreamIdentity { id: streamIdentity }
-
                 readonly property var streamNodes: root.trackedStreamNodes
-                readonly property var streamGroups: streamIdentity.buildGroups(streamNodes)
+                readonly property var streamGroups: {
+                    streamIdentity.steamRevision;
+                    return streamIdentity.buildGroups(streamNodes);
+                }
                 readonly property var otherDevices: {
                     const hidden = SessionData.hiddenOutputDeviceNames ?? [];
                     return Pipewire.nodes.values.filter(n => n.audio && n.isSink && !n.isStream && n !== AudioService.sink && !hidden.includes(n.name));
                 }
 
-                // Fixed, unclipped top section so the master slider's value tooltip
-                // (which floats above the slider) is not cut off by the flickable clip.
                 Column {
                     id: topSection
                     anchors.top: parent.top
