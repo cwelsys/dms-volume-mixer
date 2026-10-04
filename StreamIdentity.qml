@@ -24,9 +24,8 @@ QtObject {
             }));
     }
 
-    function _iconCandidates(props) {
-        return [Logic.steamIconName(identity._steamAppId(props)), identity._windowAppId(props)]
-            .concat(Logic.buildCandidates(props));
+    function _appId(props) {
+        return Logic.steamWindowClass(identity._steamAppId(props)) || identity._windowAppId(props);
     }
 
     function _steamEntry(appId) {
@@ -45,24 +44,13 @@ QtObject {
         return name ? DesktopEntries.heuristicLookup(Paths.moddedAppId(String(name))) : null;
     }
 
-    function _iconNameResolves(name) {
-        if (!name)
-            return false;
-        var modded = Paths.moddedAppId(String(name));
-        if (modded.charAt(0) === "/" || modded.charAt(0) === "~" || modded.indexOf("file://") === 0)
-            return true;
-        return !!Quickshell.iconPath(modded, true);
-    }
-
     function _entryFor(node, cache) {
         var key = node ? node.id : "?";
         if (cache && (key in cache))
             return cache[key];
         var props = (node && node.properties) ? node.properties : ({});
-        var steamAppId = identity._steamAppId(props);
-        var entry = identity._steamEntry(steamAppId)
-            || identity._lookup(Logic.steamWindowClass(steamAppId))
-            || identity._lookup(identity._windowAppId(props));
+        var entry = identity._steamEntry(identity._steamAppId(props))
+            || identity._lookup(identity._appId(props));
         var cands = Logic.buildCandidates(props);
         for (var i = 0; !entry && i < cands.length; i++)
             entry = identity._lookup(cands[i]);
@@ -71,46 +59,31 @@ QtObject {
         return entry;
     }
 
-    // Absolute-path icons (e.g. Wine/Steam Icon=/path.png) must go through the
-    // image: prefix; resolveIconPath only reliably handles theme names.
-    function _iconFromEntry(entry) {
-        if (!entry || !entry.icon)
+    function _iconForName(name) {
+        var n = name ? String(name) : "";
+        if (!n || n.charAt(0) === "/")
             return "";
-        var ic = String(entry.icon);
-        if (ic.indexOf("file://") === 0)
-            return "image:" + ic.substring(7);
-        if (ic.charAt(0) === "/")
-            return "image:" + ic;
-        return ic;
+        return Paths.moddedAppId(n) !== n ? Paths.resolveIconPath(n) : Paths.themedIconPath(n);
     }
 
-    // -> { entry, appName, iconValue }
+    // -> { entry, appName, iconSource }
     function resolve(node, cache) {
         var props = (node && node.properties) ? node.properties : ({});
         var entry = identity._entryFor(node, cache);
-        var cands = identity._iconCandidates(props);
+        var appId = identity._appId(props);
 
         var named = Logic.buildCandidates(props);
         var appName = (entry && entry.name) ? String(entry.name)
             : (Logic.stripExe(props["application.name"]) || named[0] || AudioService.displayName(node));
 
-        var iconValue = identity._iconFromEntry(entry);
-        if (!iconValue && props["application.icon_name"])
-            iconValue = String(props["application.icon_name"]);
-        if (!iconValue) {
-            for (var i = 0; i < cands.length; i++) {
-                if (identity._iconNameResolves(cands[i])) {
-                    iconValue = cands[i];
-                    break;
-                }
-            }
-        }
-        // media.name is sometimes a real icon-theme name; try it before giving up.
-        if (!iconValue && props["media.name"] && identity._iconNameResolves(props["media.name"]))
-            iconValue = String(props["media.name"]);
-        if (!iconValue)
-            iconValue = Logic.UNRESOLVED_ICON;
-        return { entry: entry, appName: appName, iconValue: iconValue };
+        var iconSource = "";
+        if (appId || entry)
+            iconSource = Paths.getAppIcon(appId || String(entry.id), entry)
+                || Paths.themedIconPath(entry && entry.icon ? String(entry.icon) : "");
+        var names = [props["application.icon-name"], props["application.icon_name"]].concat(named, [props["media.name"]]);
+        for (var i = 0; !iconSource && i < names.length; i++)
+            iconSource = identity._iconForName(names[i]);
+        return { entry: entry, appName: appName, iconSource: iconSource };
     }
 
     function descriptor(node) {
@@ -132,7 +105,7 @@ QtObject {
         return "serial:" + (props["object.serial"] || (node ? node.id : "?"));
     }
 
-    // -> [{ key, appName, iconValue, entry, nodes, descriptors }]
+    // -> [{ key, appName, iconSource, entry, nodes, descriptors }]
     function buildGroups(nodes) {
         identity.proc.retain(nodes.map(function(n) {
             return (n && n.properties) ? n.properties["application.process.id"] : null;
@@ -144,7 +117,7 @@ QtObject {
             return {
                 key: g.key,
                 appName: head.appName,
-                iconValue: head.iconValue,
+                iconSource: head.iconSource,
                 entry: head.entry,
                 nodes: g.nodes,
                 descriptors: g.nodes.map(function(n) { return identity.descriptor(n); })

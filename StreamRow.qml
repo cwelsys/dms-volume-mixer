@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Mpris
+import Quickshell.Widgets
 import qs.Common
 import qs.Services
 import qs.Widgets
@@ -16,7 +17,7 @@ Column {
 
     readonly property var nodes: group && group.nodes ? group.nodes : []
     readonly property string appName: group ? group.appName : ""
-    readonly property string iconValue: group ? group.iconValue : ""
+    readonly property string iconSource: group ? group.iconSource : ""
     readonly property bool expandable: nodes.length > 1
 
     // Identity candidates for MPRIS correlation, from the head node.
@@ -152,12 +153,31 @@ Column {
                 Layout.preferredHeight: Theme.iconSize
                 Layout.alignment: Qt.AlignVCenter
 
-                AppIconRenderer {
+                IconImage {
+                    id: appIcon
                     anchors.fill: parent
-                    iconValue: streamRow.iconValue
-                    iconSize: Theme.iconSize
-                    fallbackText: streamRow.appName ? streamRow.appName.charAt(0).toUpperCase() : "?"
+                    source: streamRow.iconSource
+                    smooth: true
+                    mipmap: true
+                    asynchronous: true
+                    visible: status === Image.Ready
                     opacity: resetArea.containsMouse ? 0.15 : 1.0
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    visible: !appIcon.visible
+                    radius: Theme.cornerRadius
+                    color: Theme.surfaceLight
+                    opacity: resetArea.containsMouse ? 0.15 : 1.0
+
+                    StyledText {
+                        anchors.centerIn: parent
+                        text: streamRow.appName ? streamRow.appName.charAt(0).toUpperCase() : "?"
+                        font.pixelSize: Theme.iconSize * 0.4
+                        font.weight: Font.Medium
+                        color: Theme.primary
+                    }
                 }
 
                 Rectangle {

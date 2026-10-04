@@ -118,13 +118,6 @@ function windowAppIdForPids(windows, pids) {
     return "";
 }
 
-// Handed to AppIconRenderer when nothing resolved. The renderer re-resolves
-// iconValue through Paths.resolveIconPath, whose tail is a substring sweep over
-// every desktop entry -- passing an unresolved app name there is how "disco"
-// ends up wearing avahi-discover's ethernet icon. This matches no entry and no
-// theme icon, so the renderer stays visible and draws the letter badge.
-var UNRESOLVED_ICON = "volumemixer-unresolved-app-icon";
-
 // "PathOfExileSteam" -> "Path Of Exile Steam". PipeWire reports the executable,
 // while desktop entries are named for the product, so the two only meet once the
 // run-together binary name is broken back into words.
