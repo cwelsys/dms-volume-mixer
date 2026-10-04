@@ -31,10 +31,14 @@ function parseSteamAppId(environText) {
         if (key !== "SteamAppId" && key !== "STEAM_COMPAT_APP_ID" && key !== "SteamGameId")
             continue;
         var value = vars[i].substring(eq + 1).trim();
-        if (/^[0-9]+$/.test(value) && value !== "0" && !(key in found))
+        if (/^[A-Za-z0-9_-]+$/.test(value) && value !== "0" && !(key in found))
             found[key] = value;
     }
-    return found["SteamAppId"] || found["STEAM_COMPAT_APP_ID"] || found["SteamGameId"] || "";
+    return found["SteamAppId"] || found["SteamGameId"] || found["STEAM_COMPAT_APP_ID"] || "";
+}
+
+function steamWindowClass(appId) {
+    return appId ? "steam_app_" + appId : "";
 }
 
 // Steam names the icon it installs after the app id and writes the same string

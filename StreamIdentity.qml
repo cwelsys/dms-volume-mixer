@@ -24,15 +24,9 @@ QtObject {
             }));
     }
 
-    function _candidatesFor(props) {
-        var cands = Logic.buildCandidates(props);
-        var windowAppId = identity._windowAppId(props);
-        if (windowAppId)
-            cands.unshift(windowAppId);
-        var steamIcon = Logic.steamIconName(identity._steamAppId(props));
-        if (steamIcon)
-            cands.unshift(steamIcon);
-        return cands;
+    function _iconCandidates(props) {
+        return [Logic.steamIconName(identity._steamAppId(props)), identity._windowAppId(props)]
+            .concat(Logic.buildCandidates(props));
     }
 
     function _steamEntry(appId) {
@@ -45,6 +39,10 @@ QtObject {
                 return all[i];
         }
         return null;
+    }
+
+    function _lookup(name) {
+        return name ? DesktopEntries.heuristicLookup(Paths.moddedAppId(String(name))) : null;
     }
 
     function _iconNameResolves(name) {
@@ -61,17 +59,13 @@ QtObject {
         if (cache && (key in cache))
             return cache[key];
         var props = (node && node.properties) ? node.properties : ({});
-        var cands = identity._candidatesFor(props);
-        var entry = null;
-        for (var i = 0; i < cands.length; i++) {
-            var e = DesktopEntries.heuristicLookup(cands[i]);
-            if (e) {
-                entry = e;
-                break;
-            }
-        }
-        if (!entry)
-            entry = identity._steamEntry(identity._steamAppId(props));
+        var steamAppId = identity._steamAppId(props);
+        var entry = identity._steamEntry(steamAppId)
+            || identity._lookup(Logic.steamWindowClass(steamAppId))
+            || identity._lookup(identity._windowAppId(props));
+        var cands = Logic.buildCandidates(props);
+        for (var i = 0; !entry && i < cands.length; i++)
+            entry = identity._lookup(cands[i]);
         if (cache)
             cache[key] = entry;
         return entry;
@@ -94,7 +88,7 @@ QtObject {
     function resolve(node, cache) {
         var props = (node && node.properties) ? node.properties : ({});
         var entry = identity._entryFor(node, cache);
-        var cands = identity._candidatesFor(props);
+        var cands = identity._iconCandidates(props);
 
         var named = Logic.buildCandidates(props);
         var appName = (entry && entry.name) ? String(entry.name)
