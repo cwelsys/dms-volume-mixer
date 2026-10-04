@@ -140,14 +140,15 @@ function stripBuildSuffix(name) {
 }
 
 // Ordered, de-duplicated candidate identity strings for a stream's props.
-// application.name / node.name before binary so Wine app names beat the loader.
+// Binary before application.name / node.name: every Electron app reports the
+// name "Chromium". A Wine loader binary matches no entry, so its app name still wins.
 function buildCandidates(props) {
     props = props || {};
     var raw = [
         props["application.id"],
+        props["application.process.binary"],
         stripExe(props["application.name"]),
-        stripExe(props["node.name"]),
-        props["application.process.binary"]
+        stripExe(props["node.name"])
     ];
     var seen = {}, out = [];
     function push(candidate) {
