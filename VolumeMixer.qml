@@ -141,7 +141,7 @@ PluginComponent {
 
                 readonly property var streamNodes: root.trackedStreamNodes
                 readonly property var streamGroups: {
-                    streamIdentity.steamRevision;
+                    streamIdentity.procRevision;
                     return streamIdentity.buildGroups(streamNodes);
                 }
                 readonly property var otherDevices: {

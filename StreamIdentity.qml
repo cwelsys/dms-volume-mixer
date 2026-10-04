@@ -7,11 +7,11 @@ import "StreamLogic.js" as Logic
 QtObject {
     id: identity
 
-    readonly property SteamAppIds steamAppIds: SteamAppIds {}
-    readonly property int steamRevision: identity.steamAppIds.revision
+    readonly property ProcInfo proc: ProcInfo {}
+    readonly property int procRevision: identity.proc.revision
 
     function _steamAppId(props) {
-        return identity.steamAppIds.appIdFor(props["application.process.id"]);
+        return identity.proc.steamAppIdFor(props["application.process.id"]);
     }
 
     function _niriAppId(props) {
@@ -136,7 +136,7 @@ QtObject {
 
     // -> [{ key, appName, iconValue, entry, nodes, descriptors }]
     function buildGroups(nodes) {
-        identity.steamAppIds.retain(nodes.map(function(n) {
+        identity.proc.retain(nodes.map(function(n) {
             return (n && n.properties) ? n.properties["application.process.id"] : null;
         }));
         var cache = ({});
