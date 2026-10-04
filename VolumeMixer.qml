@@ -235,24 +235,59 @@ PluginComponent {
                             }
                         }
 
-                        StyledText {
+                        Item {
                             id: masterPct
                             anchors.verticalCenter: parent.verticalCenter
                             // TextMetrics reports a fractional advance while Text rounds its
                             // own requirement up, so an exact-fit width elides "100%" to "100…".
                             width: Math.ceil(pctMetrics.width) + 1
-                            horizontalAlignment: Text.AlignRight
-                            text: root.masterVolume + "%"
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.weight: Font.Medium
-                            color: Theme.surfaceText
-                            elide: Text.ElideNone
-                            wrapMode: Text.NoWrap
+                            height: pctText.implicitHeight
 
-                            TextMetrics {
-                                id: pctMetrics
-                                font: masterPct.font
-                                text: Math.round(AudioService.sinkMaxVolume) + "%"
+                            readonly property bool resettable: root.masterVolume !== 100
+
+                            StyledText {
+                                id: pctText
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                horizontalAlignment: Text.AlignRight
+                                text: root.masterVolume + "%"
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.weight: Font.Medium
+                                color: Theme.surfaceText
+                                opacity: (masterPctArea.containsMouse && masterPct.resettable) ? 0 : 1
+                                elide: Text.ElideNone
+                                wrapMode: Text.NoWrap
+
+                                TextMetrics {
+                                    id: pctMetrics
+                                    font: pctText.font
+                                    text: Math.round(AudioService.sinkMaxVolume) + "%"
+                                }
+                            }
+
+                            DankIcon {
+                                anchors.centerIn: parent
+                                visible: masterPctArea.containsMouse && masterPct.resettable
+                                name: "replay"
+                                size: Theme.fontSizeSmall + 4
+                                color: Theme.primary
+                            }
+
+                            MouseArea {
+                                id: masterPctArea
+                                anchors.fill: parent
+                                anchors.margins: -Theme.spacingXS
+                                enabled: masterPct.resettable
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (!AudioService.sink?.audio)
+                                        return;
+                                    SessionData.suppressOSDTemporarily();
+                                    AudioService.sink.audio.volume = 1.0;
+                                    AudioService.sink.audio.muted = false;
+                                    AudioService.playVolumeChangeSoundIfEnabled();
+                                }
                             }
                         }
                     }
