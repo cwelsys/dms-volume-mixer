@@ -76,6 +76,44 @@ function niriAppIdForPid(windows, pid) {
     return "";
 }
 
+function parseStat(text) {
+    var s = String(text || "");
+    var open = s.indexOf("(");
+    var close = s.lastIndexOf(")");
+    if (open < 0 || close < open)
+        return null;
+    var rest = s.substring(close + 2).split(" ");
+    return { comm: s.substring(open + 1, close), ppid: rest[1] || "" };
+}
+
+function programChain(pid, statOf) {
+    var p = pid ? String(pid) : "";
+    if (!p)
+        return [];
+    var chain = [p];
+    var stat = statOf(p);
+    while (stat && chain.length < 8) {
+        var parent = stat.ppid;
+        if (!parent || parent === "0" || parent === "1")
+            break;
+        var parentStat = statOf(parent);
+        if (!parentStat || parentStat.comm !== stat.comm)
+            break;
+        chain.push(parent);
+        stat = parentStat;
+    }
+    return chain;
+}
+
+function windowAppIdForPids(windows, pids) {
+    for (var i = 0; i < pids.length; i++) {
+        var appId = niriAppIdForPid(windows, pids[i]);
+        if (appId)
+            return appId;
+    }
+    return "";
+}
+
 // Handed to AppIconRenderer when nothing resolved. The renderer re-resolves
 // iconValue through Paths.resolveIconPath, whose tail is a substring sweep over
 // every desktop entry -- passing an unresolved app name there is how "disco"

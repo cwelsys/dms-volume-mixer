@@ -14,17 +14,21 @@ QtObject {
         return identity.proc.steamAppIdFor(props["application.process.id"]);
     }
 
-    function _niriAppId(props) {
+    function _windowAppId(props) {
         if (!CompositorService.isNiri)
             return "";
-        return Logic.niriAppIdForPid(NiriService.windows, props["application.process.id"]);
+        var pid = props["application.process.id"];
+        return Logic.niriAppIdForPid(NiriService.windows, pid)
+            || Logic.windowAppIdForPids(NiriService.windows, Logic.programChain(pid, function(p) {
+                return identity.proc.statFor(p);
+            }));
     }
 
     function _candidatesFor(props) {
         var cands = Logic.buildCandidates(props);
-        var niriAppId = identity._niriAppId(props);
-        if (niriAppId)
-            cands.unshift(niriAppId);
+        var windowAppId = identity._windowAppId(props);
+        if (windowAppId)
+            cands.unshift(windowAppId);
         var steamIcon = Logic.steamIconName(identity._steamAppId(props));
         if (steamIcon)
             cands.unshift(steamIcon);

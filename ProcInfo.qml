@@ -7,7 +7,7 @@ QtObject {
 
     property int revision: 0
 
-    readonly property var _s: ({ steam: {}, queued: {}, queue: [], inFlight: "" })
+    readonly property var _s: ({ steam: {}, stat: {}, queued: {}, queue: [], inFlight: "" })
 
     readonly property FileView _reader: FileView {
         preload: true
@@ -18,6 +18,10 @@ QtObject {
 
     function steamAppIdFor(pid) {
         return cache._read(cache._s.steam, pid, "environ") || "";
+    }
+
+    function statFor(pid) {
+        return cache._read(cache._s.stat, pid, "stat") || null;
     }
 
     function _read(table, pid, file) {
@@ -39,12 +43,19 @@ QtObject {
         const s = cache._s;
         const live = ({});
         for (var i = 0; i < pids.length; i++) {
-            if (pids[i])
-                live[String(pids[i])] = true;
+            var p = pids[i] ? String(pids[i]) : "";
+            for (var hops = 0; p && !(p in live) && hops < 16; hops++) {
+                live[p] = true;
+                p = s.stat[p] ? s.stat[p].ppid : "";
+            }
         }
         for (const known in s.steam) {
             if (!(known in live))
                 delete s.steam[known];
+        }
+        for (const walked in s.stat) {
+            if (!(walked in live))
+                delete s.stat[walked];
         }
         for (const pending in s.queued) {
             if (!(pending.substring(0, pending.indexOf("/")) in live) && pending !== s.inFlight)
@@ -71,12 +82,20 @@ QtObject {
         s.inFlight = "";
         if (job) {
             delete s.queued[job];
-            const appId = Logic.parseSteamAppId(text);
-            s.steam[job.substring(0, job.indexOf("/"))] = appId;
-            // Only a hit re-runs the streamGroups binding. A miss must not churn
-            // the ScriptModel for every non-Steam stream on the system.
-            if (appId)
-                cache.revision++;
+            const pid = job.substring(0, job.indexOf("/"));
+            if (job.endsWith("/stat")) {
+                const stat = Logic.parseStat(text);
+                s.stat[pid] = stat;
+                if (stat)
+                    cache.revision++;
+            } else {
+                const appId = Logic.parseSteamAppId(text);
+                s.steam[pid] = appId;
+                // Only a hit re-runs the streamGroups binding. A miss must not churn
+                // the ScriptModel for every non-Steam stream on the system.
+                if (appId)
+                    cache.revision++;
+            }
         }
         Qt.callLater(cache._pump);
     }
