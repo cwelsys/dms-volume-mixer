@@ -7,7 +7,7 @@ QtObject {
 
     property int revision: 0
 
-    readonly property var _s: ({ steam: {}, stat: {}, queued: {}, queue: [], inFlight: "" })
+    readonly property var _s: ({ steam: {}, stat: {}, queued: {}, queue: [], inFlight: "", dirty: false })
 
     readonly property FileView _reader: FileView {
         preload: true
@@ -66,8 +66,15 @@ QtObject {
 
     function _pump() {
         const s = cache._s;
-        if (s.inFlight || s.queue.length === 0)
+        if (s.inFlight)
             return;
+        if (s.queue.length === 0) {
+            if (s.dirty) {
+                s.dirty = false;
+                cache.revision++;
+            }
+            return;
+        }
         s.inFlight = s.queue.shift();
         const path = "/proc/" + s.inFlight;
         if (cache._reader.path === path)
@@ -87,13 +94,13 @@ QtObject {
                 const stat = Logic.parseStat(text);
                 s.stat[pid] = stat;
                 if (stat)
-                    cache.revision++;
+                    s.dirty = true;
             } else {
                 const appId = Logic.parseSteamAppId(text);
                 s.steam[pid] = appId;
-                // Bump only on a hit so that non-Steam streams don't re-run the grouping.
+                // Only a hit marks the cache dirty, so non-Steam streams don't re-run the grouping.
                 if (appId)
-                    cache.revision++;
+                    s.dirty = true;
             }
         }
         Qt.callLater(cache._pump);
