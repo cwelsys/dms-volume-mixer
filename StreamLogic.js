@@ -74,11 +74,16 @@ function niriAppIdForPid(windows, pid) {
     if (!isFinite(target))
         return "";
     var list = windows || [];
+    var found = "";
     for (var i = 0; i < list.length; i++) {
-        if (list[i] && Number(list[i].pid) === target)
-            return String(list[i].app_id || "");
+        var appId = (list[i] && Number(list[i].pid) === target) ? String(list[i].app_id || "") : "";
+        if (!appId || appId === found)
+            continue;
+        if (found)
+            return "";
+        found = appId;
     }
-    return "";
+    return found;
 }
 
 function parseStat(text) {
