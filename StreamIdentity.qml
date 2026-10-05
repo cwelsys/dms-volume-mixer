@@ -66,7 +66,7 @@ QtObject {
         return Paths.moddedAppId(n) !== n ? Paths.resolveIconPath(n) : Paths.themedIconPath(n);
     }
 
-    // -> { entry, appName, iconSource }
+    // Resolves the desktop entry, display name and icon source for a stream.
     function resolve(node, cache) {
         var props = (node && node.properties) ? node.properties : ({});
         var entry = identity._entryFor(node, cache);
@@ -105,7 +105,7 @@ QtObject {
         return "serial:" + (props["object.serial"] || (node ? node.id : "?"));
     }
 
-    // -> [{ key, appName, iconSource, entry, nodes, descriptors }]
+    // Groups the stream nodes per app and resolves each group's name and icon.
     function buildGroups(nodes) {
         identity.proc.retain(nodes.map(function(n) {
             return (n && n.properties) ? n.properties["application.process.id"] : null;

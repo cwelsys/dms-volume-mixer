@@ -25,9 +25,7 @@ PluginComponent {
 
     PwObjectTracker { objects: root.trackedStreamNodes }
 
-    // Root-level, not inside the popout: the popout Component is torn down on
-    // close, and the PID -> Steam app id cache should outlive it rather than
-    // re-reading /proc every time the mixer is opened.
+    // Kept outside the popout so the /proc cache survives closing it.
     StreamIdentity { id: streamIdentity }
 
     function adjustVolumeByScroll(wheelEvent) {

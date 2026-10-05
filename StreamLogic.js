@@ -16,10 +16,10 @@ function isBoilerplateMediaName(name) {
     return false;
 }
 
-// Steam exports these into the environment of everything it launches, Proton or
-// native, and /proc/<pid>/environ is NUL-separated. SteamAppId is preferred:
-// non-Steam shortcuts added to Steam report SteamAppId=0 alongside a synthesized
-// 64-bit SteamGameId, and only the latter appears in their desktop entry.
+// Reads the Steam app id from the contents of /proc/<pid>/environ.
+//
+// Steam sets these variables for everything it launches. Non-Steam shortcuts get SteamAppId=0
+// and a generated SteamGameId, and only the latter appears in their desktop entry.
 function parseSteamAppId(environText) {
     var vars = String(environText || "").split("\u0000");
     var found = {};
@@ -41,17 +41,18 @@ function steamWindowClass(appId) {
     return appId ? "steam_app_" + appId : "";
 }
 
-// Steam names the icon it installs after the app id and writes the same string
-// into StartupWMClass on most of the entries it generates, so this is the join
-// key between a running game and its desktop entry.
+// Name of the icon Steam installs for an app.
+//
+// Most generated entries also have it as their StartupWMClass, so it ties a running game to
+// its desktop entry.
 function steamIconName(appId) {
     return appId ? "steam_icon_" + appId : "";
 }
 
-// Predicate matching the entry Steam generated for an app id, by the icon it
-// installs (present on every generated entry) or by the steam://rungameid Exec
-// (which also covers non-Steam shortcuts, whose Icon is an absolute path).
-// Equality on a unique key, not a substring sweep: exactly one entry can match.
+// Returns a predicate matching the desktop entry Steam generated for an app id.
+//
+// Entries for Steam games have the icon. Non-Steam shortcuts have an absolute icon path
+// instead, so they are matched by their steam://rungameid Exec.
 function steamEntryMatcher(appId) {
     if (!appId)
         return null;
@@ -137,8 +138,9 @@ function stripBuildSuffix(name) {
 }
 
 // Ordered, de-duplicated candidate identity strings for a stream's props.
-// Binary before application.name / node.name: every Electron app reports the
-// name "Chromium". A Wine loader binary matches no entry, so its app name still wins.
+//
+// The binary goes before the names because every Electron app is named "Chromium". A Wine
+// loader binary matches no entry, so its app name still wins.
 function buildCandidates(props) {
     props = props || {};
     var raw = [

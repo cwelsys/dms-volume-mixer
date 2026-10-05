@@ -91,8 +91,7 @@ QtObject {
             } else {
                 const appId = Logic.parseSteamAppId(text);
                 s.steam[pid] = appId;
-                // Only a hit re-runs the streamGroups binding. A miss must not churn
-                // the ScriptModel for every non-Steam stream on the system.
+                // Bump only on a hit so that non-Steam streams don't re-run the grouping.
                 if (appId)
                     cache.revision++;
             }
