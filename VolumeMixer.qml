@@ -241,7 +241,7 @@ PluginComponent {
                             width: Math.ceil(pctMetrics.width) + 1
                             height: pctText.implicitHeight
 
-                            readonly property bool resettable: root.masterVolume !== 100
+                            readonly property bool resettable: !!AudioService.sink?.audio && root.masterVolume !== 100
 
                             StyledText {
                                 id: pctText
