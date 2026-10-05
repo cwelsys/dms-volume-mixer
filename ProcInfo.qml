@@ -25,7 +25,7 @@ QtObject {
     }
 
     function _read(table, pid, file) {
-        const key = pid ? String(pid) : "";
+        const key = /^\d+$/.test(pid) ? String(pid) : "";
         if (!key)
             return undefined;
         if (key in table)
