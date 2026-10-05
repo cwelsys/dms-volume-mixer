@@ -8,6 +8,7 @@ Standalone volume mixer for [dms](https://github.com/AvengeMedia/DankMaterialShe
 - Groups with more than one stream expand to per-stream volume and mute controls.
 - Rows show what's playing when the app exposes an MPRIS session.
 - Hover an app icon to reset that app back to 100%.
+- Hover the master percentage to reset the output back to 100%.
 
 ## Install
 
