@@ -9,6 +9,11 @@ QtObject {
 
     readonly property ProcInfo proc: ProcInfo {}
     readonly property int procRevision: identity.proc.revision
+    readonly property string _windowKey: CompositorService.isNiri
+        ? JSON.stringify((NiriService.windows || []).map(function(w) { return [w.pid, w.app_id]; }).sort()) : "[]"
+    readonly property var _windows: JSON.parse(identity._windowKey).map(function(pair) {
+        return { pid: pair[0], app_id: pair[1] };
+    })
 
     function _steamAppId(props) {
         return identity.proc.steamAppIdFor(props["application.process.id"]);
@@ -18,8 +23,8 @@ QtObject {
         if (!CompositorService.isNiri)
             return "";
         var pid = props["application.process.id"];
-        return Logic.niriAppIdForPid(NiriService.windows, pid)
-            || Logic.windowAppIdForPids(NiriService.windows, Logic.programChain(pid, function(p) {
+        return Logic.niriAppIdForPid(identity._windows, pid)
+            || Logic.windowAppIdForPids(identity._windows, Logic.programChain(pid, function(p) {
                 return identity.proc.statFor(p);
             }));
     }
