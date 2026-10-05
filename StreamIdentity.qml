@@ -41,7 +41,12 @@ QtObject {
     }
 
     function _lookup(name) {
-        return name ? DesktopEntries.heuristicLookup(Paths.moddedAppId(String(name))) : null;
+        if (!name)
+            return null;
+        var raw = String(name);
+        var modded = Paths.moddedAppId(raw);
+        return DesktopEntries.heuristicLookup(modded)
+            || (modded !== raw ? DesktopEntries.heuristicLookup(raw) : null);
     }
 
     function _entryFor(node, cache) {
