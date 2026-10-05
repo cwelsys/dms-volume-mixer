@@ -49,19 +49,20 @@ QtObject {
             || (modded !== raw ? DesktopEntries.heuristicLookup(raw) : null);
     }
 
-    function _entryFor(node, cache) {
+    function _identify(node, cache) {
         var key = node ? node.id : "?";
         if (cache && (key in cache))
             return cache[key];
         var props = (node && node.properties) ? node.properties : ({});
-        var entry = identity._steamEntry(identity._steamAppId(props))
-            || identity._lookup(identity._appId(props));
+        var appId = identity._appId(props);
+        var entry = identity._steamEntry(identity._steamAppId(props)) || identity._lookup(appId);
         var cands = Logic.buildCandidates(props);
         for (var i = 0; !entry && i < cands.length; i++)
             entry = identity._lookup(cands[i]);
+        var found = { appId: appId, entry: entry };
         if (cache)
-            cache[key] = entry;
-        return entry;
+            cache[key] = found;
+        return found;
     }
 
     function _iconForName(name) {
@@ -74,8 +75,9 @@ QtObject {
     // Resolves the desktop entry, display name and icon source for a stream.
     function resolve(node, cache) {
         var props = (node && node.properties) ? node.properties : ({});
-        var entry = identity._entryFor(node, cache);
-        var appId = identity._appId(props);
+        var found = identity._identify(node, cache);
+        var entry = found.entry;
+        var appId = found.appId;
 
         var named = Logic.buildCandidates(props);
         var appName = (entry && entry.name) ? String(entry.name)
@@ -98,9 +100,11 @@ QtObject {
 
     function groupKey(node, cache) {
         var props = (node && node.properties) ? node.properties : ({});
-        var entry = identity._entryFor(node, cache);
-        if (entry && entry.id)
-            return "entry:" + entry.id;
+        var found = identity._identify(node, cache);
+        if (found.entry && found.entry.id)
+            return "entry:" + found.entry.id;
+        if (found.appId)
+            return "appid:" + found.appId;
         if (props["application.process.id"])
             return "pid:" + props["application.process.id"];
         if (props["application.process.binary"])
