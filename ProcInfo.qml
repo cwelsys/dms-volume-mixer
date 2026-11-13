@@ -7,7 +7,7 @@ QtObject {
 
     property int revision: 0
 
-    readonly property var _s: ({ steam: {}, stat: {}, queued: {}, queue: [], inFlight: "", dirty: false })
+    readonly property var _s: ({ steam: {}, stat: {}, exe: {}, queued: {}, queue: [], inFlight: "", dirty: false })
 
     readonly property FileView _reader: FileView {
         preload: true
@@ -18,6 +18,10 @@ QtObject {
 
     function steamAppIdFor(pid) {
         return cache._read(cache._s.steam, pid, "environ") || "";
+    }
+
+    function exeFor(pid) {
+        return cache._read(cache._s.exe, pid, "cmdline") || "";
     }
 
     function statFor(pid) {
@@ -52,6 +56,10 @@ QtObject {
         for (const known in s.steam) {
             if (!(known in live))
                 delete s.steam[known];
+        }
+        for (const seen in s.exe) {
+            if (!(seen in live))
+                delete s.exe[seen];
         }
         for (const walked in s.stat) {
             if (!(walked in live))
@@ -94,6 +102,11 @@ QtObject {
                 const stat = Logic.parseStat(text);
                 s.stat[pid] = stat;
                 if (stat)
+                    s.dirty = true;
+            } else if (job.endsWith("/cmdline")) {
+                const exe = Logic.exeFromCmdline(text);
+                s.exe[pid] = exe;
+                if (exe)
                     s.dirty = true;
             } else {
                 const appId = Logic.parseSteamAppId(text);

@@ -29,29 +29,70 @@ QtObject {
             }));
     }
 
-    function _appId(props) {
-        return Logic.steamWindowClass(identity._steamAppId(props)) || identity._windowAppId(props);
-    }
-
-    function _steamEntry(appId) {
-        var matches = Logic.steamEntryMatcher(appId);
-        if (!matches)
-            return null;
+    function _records(cache) {
+        if (cache && cache.__records)
+            return cache.__records;
+        var list = [];
+        var index = ({});
         var all = DesktopEntries.applications.values;
         for (var i = 0; i < all.length; i++) {
-            if (matches(all[i]))
-                return all[i];
+            var e = all[i];
+            var rec = {
+                id: String(e.id || ""),
+                name: String(e.name || ""),
+                startupClass: String(e.startupClass || ""),
+                command: e.command ? Array.from(e.command).map(String) : [],
+                execString: String(e.execString || ""),
+                icon: String(e.icon || ""),
+                ref: e
+            };
+            list.push(rec);
+            index[rec.id] = rec;
+        }
+        var records = { list: list, index: index };
+        if (cache)
+            cache.__records = records;
+        return records;
+    }
+
+    function _byId(name, records) {
+        var raw = String(name || "");
+        if (!raw)
+            return null;
+        var modded = Paths.moddedAppId(raw);
+        var tries = [modded, raw, modded.toLowerCase(), raw.toLowerCase()];
+        for (var i = 0; i < tries.length; i++) {
+            var e = tries[i] ? DesktopEntries.byId(tries[i]) : null;
+            if (e)
+                return records.index[String(e.id)] || { id: String(e.id), name: String(e.name || ""), ref: e };
         }
         return null;
     }
 
-    function _lookup(name) {
-        if (!name)
-            return null;
-        var raw = String(name);
-        var modded = Paths.moddedAppId(raw);
-        return DesktopEntries.heuristicLookup(modded)
-            || (modded !== raw ? DesktopEntries.heuristicLookup(raw) : null);
+    function _signals(props) {
+        var pid = props["application.process.id"];
+        var chain = Logic.programChain(pid, function(p) {
+            return identity.proc.statFor(p);
+        });
+        return {
+            props: props,
+            steamAppId: identity._steamAppId(props),
+            windowAppId: identity._windowAppId(props),
+            exe: identity.proc.exeFor(pid),
+            binary: props["application.process.binary"] || "",
+            parents: chain.slice(1).map(function(p) {
+                var stat = identity.proc.statFor(p);
+                return { exe: identity.proc.exeFor(p), binary: stat ? stat.comm : "" };
+            })
+        };
+    }
+
+    function _resolveSignals(signals, cache) {
+        var records = identity._records(cache);
+        var r = Logic.resolveEntry(signals, records.list, function(name) {
+            return identity._byId(name, records);
+        });
+        return { entry: r.entry ? r.entry.ref : null, appId: r.appId, via: r.via };
     }
 
     function _identify(node, cache) {
@@ -59,12 +100,8 @@ QtObject {
         if (cache && (key in cache))
             return cache[key];
         var props = (node && node.properties) ? node.properties : ({});
-        var appId = identity._appId(props);
-        var entry = identity._steamEntry(identity._steamAppId(props)) || identity._lookup(appId);
-        var cands = Logic.buildCandidates(props);
-        for (var i = 0; !entry && i < cands.length; i++)
-            entry = identity._lookup(cands[i]);
-        var found = { appId: appId, entry: entry };
+        var r = identity._resolveSignals(identity._signals(props), cache);
+        var found = { appId: r.appId, entry: r.entry };
         if (cache)
             cache[key] = found;
         return found;
