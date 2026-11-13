@@ -67,6 +67,42 @@ function steamEntryMatcher(appId) {
     };
 }
 
+var snapRadius = 3;
+
+function snapPoints(interval, max) {
+    var points = [];
+    if (interval > 0) {
+        for (var p = interval; p <= max; p += interval)
+            points.push(p);
+    }
+    if (max >= 100 && points.indexOf(100) < 0)
+        points.push(100);
+    return points.sort(function(a, b) { return a - b; });
+}
+
+function _nearestPoint(points, value, radius, accept) {
+    var best = null;
+    for (var i = 0; i < points.length; i++) {
+        var d = Math.abs(points[i] - value);
+        if (d <= radius && accept(points[i]) && (best === null || d < Math.abs(best - value)))
+            best = points[i];
+    }
+    return best;
+}
+
+function softSnap(value, interval, radius, max) {
+    var p = _nearestPoint(snapPoints(interval, max), value, radius, function() { return true; });
+    return Math.max(0, Math.min(max, p !== null ? p : value));
+}
+
+function wheelSnap(current, delta, interval, radius, max) {
+    var next = Math.max(0, Math.min(max, current + delta));
+    var p = _nearestPoint(snapPoints(interval, max), next, radius, function(point) {
+        return delta > 0 ? point > current : point < current;
+    });
+    return p !== null ? p : next;
+}
+
 function _basename(path) {
     var s = String(path || "");
     var cut = Math.max(s.lastIndexOf("/"), s.lastIndexOf("\\"));

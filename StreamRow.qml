@@ -13,6 +13,7 @@ Column {
 
     required property var group
     property int maxVol: 100
+    property int snapInterval: 25
     property bool expanded: false
 
     readonly property var nodes: group && group.nodes ? group.nodes : []
@@ -288,24 +289,18 @@ Column {
                 }
             }
 
-            DSlider {
+            VolumeSlider {
                 id: slider
                 Layout.preferredWidth: 100
                 Layout.preferredHeight: 40
                 Layout.alignment: Qt.AlignVCenter
-                minimum: 0
                 maximum: streamRow.maxVol
+                percent: streamRow.groupVolumePercent
+                snapInterval: streamRow.snapInterval
                 showValue: true
-                unit: "%"
-                valueOverride: streamRow.groupVolumePercent
                 thumbOutlineColor: Theme.surfaceContainer
 
-                Binding on value {
-                    value: Math.min(streamRow.maxVol, streamRow.groupVolumePercent)
-                    when: !slider.isDragging
-                }
-
-                onSliderValueChanged: newValue => streamRow.setGroupVolume(newValue)
+                onPercentRequested: newValue => streamRow.setGroupVolume(newValue)
             }
         }
     }
@@ -369,25 +364,18 @@ Column {
                     }
                 }
 
-                DSlider {
+                VolumeSlider {
                     id: subSlider
-                    readonly property real pct: modelData.audio ? Math.round(modelData.audio.volume * 100) : 0
                     Layout.preferredWidth: 90
                     Layout.preferredHeight: 36
                     Layout.alignment: Qt.AlignVCenter
-                    minimum: 0
                     maximum: streamRow.maxVol
+                    percent: modelData.audio ? Math.round(modelData.audio.volume * 100) : 0
+                    snapInterval: streamRow.snapInterval
                     showValue: true
-                    unit: "%"
-                    valueOverride: pct
                     thumbOutlineColor: Theme.surfaceContainer
 
-                    Binding on value {
-                        value: Math.min(streamRow.maxVol, subSlider.pct)
-                        when: !subSlider.isDragging
-                    }
-
-                    onSliderValueChanged: newValue => {
+                    onPercentRequested: newValue => {
                         if (modelData.audio) {
                             SessionData.suppressOSDTemporarily();
                             modelData.audio.volume = newValue / 100;

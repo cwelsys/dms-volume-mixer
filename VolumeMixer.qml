@@ -17,6 +17,7 @@ PluginComponent {
         ? Math.round(AudioService.sink.audio.volume * 100)
         : 0
     readonly property bool masterMuted: AudioService.sink?.audio?.muted ?? false
+    readonly property int snapInterval: Number(root.pluginData?.snapInterval ?? "25")
 
     // Keep stream-node .properties populated at all times so grouping/resolution
     // (StreamIdentity.buildGroups) sees real props the moment the popout opens.
@@ -35,9 +36,9 @@ PluginComponent {
         let maxVol = AudioService.sinkMaxVolume;
         let newVolume;
         if (wheelEvent.angleDelta.y > 0)
-            newVolume = Math.min(maxVol, currentVolume + 5);
+            newVolume = Math.min(maxVol, currentVolume + AudioService.wheelVolumeStep);
         else
-            newVolume = Math.max(0, currentVolume - 5);
+            newVolume = Math.max(0, currentVolume - AudioService.wheelVolumeStep);
         AudioService.sink.audio.muted = false;
         AudioService.sink.audio.volume = newVolume / 100;
         wheelEvent.accepted = true;
@@ -201,26 +202,19 @@ PluginComponent {
                             }
                         }
 
-                        DSlider {
+                        VolumeSlider {
                             id: masterSlider
-                            readonly property real actualVolumePercent: AudioService.sink?.audio ? Math.round(AudioService.sink.audio.volume * 100) : 0
 
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width - (Theme.iconSize + Theme.spacingS * 2) - masterPct.width - parent.spacing * 2
                             height: 40
-                            minimum: 0
                             maximum: AudioService.sinkMaxVolume
+                            percent: root.masterVolume
+                            snapInterval: root.snapInterval
                             showValue: false
-                            unit: "%"
-                            valueOverride: actualVolumePercent
                             thumbOutlineColor: Theme.surfaceVariant
 
-                            Binding on value {
-                                value: Math.min(AudioService.sinkMaxVolume, masterSlider.actualVolumePercent)
-                                when: !masterSlider.isDragging
-                            }
-
-                            onSliderValueChanged: newValue => {
+                            onPercentRequested: newValue => {
                                 if (AudioService.sink?.audio) {
                                     // Suppressing the OSD also gates AudioService's own
                                     // volume-change sound, so play it back explicitly.
@@ -404,6 +398,7 @@ PluginComponent {
                                 width: listColumn.width
                                 group: modelData
                                 maxVol: popoutItem.maxStreamVol
+                                snapInterval: root.snapInterval
                             }
                         }
                     }

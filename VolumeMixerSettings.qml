@@ -29,6 +29,17 @@ PluginSettings {
         ]
     }
 
+    SelectionSetting {
+        settingKey: "snapInterval"
+        label: "Slider Snapping"
+        defaultValue: "25"
+        options: [
+            { label: "Quarters (25/50/75)", value: "25" },
+            { label: "Every 10", value: "10" },
+            { label: "Off", value: "0" }
+        ]
+    }
+
     Column {
         id: deviceSelectorSetting
         width: parent.width
