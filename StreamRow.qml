@@ -5,7 +5,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Widgets
 import qs.Common
 import qs.Services
-import qs.Widgets
+import qs.DCommon.Widgets
 import "StreamLogic.js" as Logic
 
 Column {
@@ -186,7 +186,7 @@ Column {
                     visible: resetArea.containsMouse
                     color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.85)
 
-                    DankIcon {
+                    DIcon {
                         anchors.centerIn: parent
                         name: "replay"
                         size: Theme.iconSize - 6
@@ -246,7 +246,7 @@ Column {
                     onClicked: streamRow.expanded = !streamRow.expanded
                 }
 
-                DankIcon {
+                DIcon {
                     anchors.centerIn: parent
                     name: streamRow.expanded ? "expand_less" : "expand_more"
                     size: Theme.iconSize - 4
@@ -261,7 +261,7 @@ Column {
                 radius: Theme.cornerRadius
                 color: muteArea.containsMouse ? Theme.primaryHover : "transparent"
 
-                DankRipple { id: muteRipple; cornerRadius: parent.radius }
+                DRipple { id: muteRipple; cornerRadius: parent.radius }
 
                 MouseArea {
                     id: muteArea
@@ -272,7 +272,7 @@ Column {
                     onClicked: streamRow.toggleGroupMute()
                 }
 
-                DankIcon {
+                DIcon {
                     anchors.centerIn: parent
                     name: {
                         if (streamRow.allMuted)
@@ -288,7 +288,7 @@ Column {
                 }
             }
 
-            DankSlider {
+            DSlider {
                 id: slider
                 Layout.preferredWidth: 100
                 Layout.preferredHeight: 40
@@ -350,7 +350,7 @@ Column {
                     wrapMode: Text.NoWrap
                 }
 
-                DankIcon {
+                DIcon {
                     Layout.alignment: Qt.AlignVCenter
                     name: (!modelData.audio || modelData.audio.muted) ? "volume_off" : "volume_up"
                     size: Theme.iconSize - 6
@@ -369,7 +369,7 @@ Column {
                     }
                 }
 
-                DankSlider {
+                DSlider {
                     id: subSlider
                     readonly property real pct: modelData.audio ? Math.round(modelData.audio.volume * 100) : 0
                     Layout.preferredWidth: 90

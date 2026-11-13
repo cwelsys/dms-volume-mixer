@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Services.Pipewire
 import qs.Common
 import qs.Services
-import qs.Widgets
+import qs.DCommon.Widgets
 
 Rectangle {
     id: deviceRow
@@ -21,7 +21,7 @@ Rectangle {
         : Theme.nestedSurface
     border.width: 0
 
-    DankRipple { id: ripple; cornerRadius: deviceRow.radius }
+    DRipple { id: ripple; cornerRadius: deviceRow.radius }
 
     Row {
         anchors.left: parent.left
@@ -31,7 +31,7 @@ Rectangle {
         anchors.rightMargin: Theme.spacingM
         spacing: Theme.spacingS
 
-        DankIcon {
+        DIcon {
             id: devIcon
             name: AudioService.sinkIcon(deviceRow.node)
             size: Theme.iconSize - 4

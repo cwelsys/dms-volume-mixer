@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.Common
-import qs.Widgets
+import qs.DCommon.Widgets
 import qs.Modules.Plugins
 
 PluginSettings {
@@ -63,7 +63,7 @@ PluginSettings {
                 color: Theme.surfaceText
             }
 
-            DankToggle {
+            DToggle {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 checked: deviceSelectorSetting.value
@@ -113,7 +113,7 @@ PluginSettings {
             width: parent.width
             spacing: Theme.spacingS
 
-            DankActionButton {
+            DActionButton {
                 Layout.alignment: Qt.AlignVCenter
                 iconName: "replay"
                 iconSize: 12
@@ -127,7 +127,7 @@ PluginSettings {
                 }
             }
 
-            DankSlider {
+            DSlider {
                 id: maxVolSlider
                 Layout.fillWidth: true
                 minimum: 100

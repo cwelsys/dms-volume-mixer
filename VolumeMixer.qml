@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Services.Pipewire
 import qs.Common
 import qs.Services
-import qs.Widgets
+import qs.DCommon.Widgets
 import qs.Modules.Plugins
 
 PluginComponent {
@@ -68,7 +68,7 @@ PluginComponent {
                 id: hPillRow
                 spacing: Theme.spacingS
 
-                DankIcon {
+                DIcon {
                     visible: (root.pluginData?.pillDisplay ?? "both") !== "percent"
                     name: root.pillIcon()
                     size: Theme.barIconSize(root.barThickness, -4)
@@ -102,7 +102,7 @@ PluginComponent {
                 id: vPillCol
                 spacing: 1
 
-                DankIcon {
+                DIcon {
                     visible: (root.pluginData?.pillDisplay ?? "both") !== "percent"
                     name: root.pillIcon()
                     size: Theme.barIconSize(root.barThickness, -2)
@@ -170,7 +170,7 @@ PluginComponent {
                             radius: (Theme.iconSize + Theme.spacingS * 2) / 2
                             color: masterMuteArea.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12) : "transparent"
 
-                            DankRipple { id: masterMuteRipple; cornerRadius: parent.radius }
+                            DRipple { id: masterMuteRipple; cornerRadius: parent.radius }
 
                             MouseArea {
                                 id: masterMuteArea
@@ -186,7 +186,7 @@ PluginComponent {
                                 }
                             }
 
-                            DankIcon {
+                            DIcon {
                                 anchors.centerIn: parent
                                 name: {
                                     if (!AudioService.sink?.audio || AudioService.sink.audio.muted)
@@ -201,7 +201,7 @@ PluginComponent {
                             }
                         }
 
-                        DankSlider {
+                        DSlider {
                             id: masterSlider
                             readonly property real actualVolumePercent: AudioService.sink?.audio ? Math.round(AudioService.sink.audio.volume * 100) : 0
 
@@ -263,7 +263,7 @@ PluginComponent {
                                 }
                             }
 
-                            DankIcon {
+                            DIcon {
                                 anchors.centerIn: parent
                                 visible: masterPctArea.containsMouse && masterPct.resettable
                                 name: "replay"
@@ -299,7 +299,7 @@ PluginComponent {
                         radius: Theme.cornerRadius
                         color: activeDeviceArea.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08) : Theme.nestedSurface
 
-                        DankRipple { id: activeDeviceRipple; cornerRadius: activeDeviceCard.radius }
+                        DRipple { id: activeDeviceRipple; cornerRadius: activeDeviceCard.radius }
 
                         Row {
                             anchors.left: parent.left
@@ -307,7 +307,7 @@ PluginComponent {
                             anchors.leftMargin: Theme.spacingM
                             spacing: Theme.spacingS
 
-                            DankIcon {
+                            DIcon {
                                 name: AudioService.sinkIcon(AudioService.sink)
                                 size: Theme.iconSize - 4
                                 color: Theme.primary
@@ -332,7 +332,7 @@ PluginComponent {
                             }
                         }
 
-                        DankIcon {
+                        DIcon {
                             anchors.right: parent.right
                             anchors.rightMargin: Theme.spacingM
                             anchors.verticalCenter: parent.verticalCenter
@@ -355,7 +355,7 @@ PluginComponent {
                     }
                 }
 
-                DankFlickable {
+                DFlickable {
                     id: flick
                     anchors.top: topSection.bottom
                     anchors.topMargin: Theme.spacingS
