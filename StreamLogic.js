@@ -63,8 +63,167 @@ function steamEntryMatcher(appId) {
             return false;
         if (entry.icon && String(entry.icon) === icon)
             return true;
-        return exec.test(entry.execString || "");
+        return exec.test(entry.execString || (entry.command || []).join(" "));
     };
+}
+
+function _basename(path) {
+    var s = String(path || "");
+    var cut = Math.max(s.lastIndexOf("/"), s.lastIndexOf("\\"));
+    return cut >= 0 ? s.substring(cut + 1) : s;
+}
+
+function exeFromCmdline(text) {
+    var args = String(text || "").split("\u0000").filter(function(a) { return a !== ""; });
+    if (args.length === 0)
+        return "";
+    var exe = _basename(args[0]);
+    if (/^wine(64)?(-preloader)?$/i.test(exe)) {
+        for (var i = 1; i < args.length; i++) {
+            if (/\.exe$/i.test(args[i]))
+                return _basename(args[i]);
+        }
+    }
+    return exe;
+}
+
+function isNumericSteamId(id) {
+    return /^\d+$/.test(String(id || ""));
+}
+
+function isEngineName(name) {
+    var n = String(name || "").trim();
+    return /^chromium$/i.test(n) || /^webrtc voiceengine$/i.test(n) || /^alsa plug-in/i.test(n);
+}
+
+function _programArgs(entry) {
+    var cmd = (entry && entry.command) ? entry.command : [];
+    var i = 0;
+    if (cmd.length && _basename(cmd[0]) === "env") {
+        i = 1;
+        while (i < cmd.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(cmd[i]))
+            i++;
+    }
+    return cmd.slice(i);
+}
+
+function execProgram(entry) {
+    var args = _programArgs(entry);
+    return args.length ? _basename(args[0]).toLowerCase() : "";
+}
+
+function _isPlain(entry) {
+    return _programArgs(entry).slice(1).every(function(a) { return /^%[a-zA-Z]$/.test(a); });
+}
+
+function uniqueBy(entries, pred) {
+    var found = null;
+    for (var i = 0; i < (entries || []).length; i++) {
+        if (!pred(entries[i]))
+            continue;
+        if (found)
+            return null;
+        found = entries[i];
+    }
+    return found;
+}
+
+function matchByClass(entries, name) {
+    var n = String(name || "").trim().toLowerCase();
+    if (!n)
+        return null;
+    return uniqueBy(entries, function(e) { return String(e.startupClass || "").toLowerCase() === n; });
+}
+
+function matchByExec(entries, program) {
+    var p = _basename(String(program || "").trim()).toLowerCase();
+    if (!p)
+        return null;
+    var same = (entries || []).filter(function(e) { return execProgram(e) === p; });
+    if (same.length === 1)
+        return same[0];
+    return uniqueBy(same, _isPlain);
+}
+
+function matchByName(entries, name) {
+    var n = String(name || "").trim().toLowerCase();
+    if (!n || isEngineName(n))
+        return null;
+    return uniqueBy(entries, function(e) { return String(e.name || "").toLowerCase() === n; });
+}
+
+function _firstEntry(list, find) {
+    for (var i = 0; i < list.length; i++) {
+        var e = list[i] ? find(list[i]) : null;
+        if (e)
+            return e;
+    }
+    return null;
+}
+
+function _appIdFor(s) {
+    var steam = String(s.steamAppId || "");
+    if (steam && isNumericSteamId(steam))
+        return steamWindowClass(steam);
+    if (s.windowAppId)
+        return String(s.windowAppId);
+    if (steam && s.exe)
+        return String(s.exe).toLowerCase();
+    return steamWindowClass(steam);
+}
+
+function resolveEntry(signals, entries, byId) {
+    var s = signals || {};
+    var props = s.props || {};
+    entries = entries || [];
+    var lookup = function(name) { return name ? (byId(String(name)) || null) : null; };
+    var steam = String(s.steamAppId || "");
+    var exe = String(s.exe || "");
+    var parents = s.parents || [];
+    var named = {};
+    ["application.name", "node.name"].forEach(function(k) {
+        if (props[k] && isEngineName(stripExe(props[k])))
+            named[k] = true;
+    });
+    var cleanProps = {};
+    for (var k in props)
+        cleanProps[k] = named[k] ? "" : props[k];
+    var cands = buildCandidates(cleanProps);
+    var exeLookup = function(name) {
+        return matchByClass(entries, name) || lookup(name) || lookup(stripExe(name));
+    };
+    var steps = [
+        function() {
+            return _firstEntry([props["pipewire.access.portal.app_id"], props["application.id"],
+                props["application.icon-name"], props["application.icon_name"]], lookup);
+        },
+        function() {
+            var m = isNumericSteamId(steam) ? steamEntryMatcher(steam) : null;
+            return m ? (entries.filter(m)[0] || null) : null;
+        },
+        function() {
+            return s.windowAppId ? (lookup(s.windowAppId) || matchByClass(entries, s.windowAppId)) : null;
+        },
+        function() { return exe ? exeLookup(exe) : null; },
+        function() { return steam ? matchByClass(entries, steamWindowClass(steam)) : null; },
+        function() { return _firstEntry(cands, lookup); },
+        function() {
+            return _firstEntry(cands, function(c) { return matchByClass(entries, c); })
+                || matchByExec(entries, s.binary || props["application.process.binary"]);
+        },
+        function() {
+            return _firstEntry(parents, function(p) {
+                return (p.exe ? exeLookup(p.exe) : null) || matchByExec(entries, p.binary);
+            });
+        },
+        function() { return named["application.name"] ? null : matchByName(entries, stripExe(props["application.name"])); }
+    ];
+    for (var i = 0; i < steps.length; i++) {
+        var entry = steps[i]();
+        if (entry)
+            return { entry: entry, appId: _appIdFor(s), via: i + 1 };
+    }
+    return { entry: null, appId: _appIdFor(s), via: 0 };
 }
 
 function niriAppIdForPid(windows, pid) {
