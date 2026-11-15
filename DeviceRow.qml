@@ -17,7 +17,7 @@ Rectangle {
     height: 50
     radius: Theme.cornerRadius
     color: deviceArea.containsMouse
-        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08)
+        ? Theme.withAlpha(Theme.primary, Theme.stateLayerHover)
         : Theme.nestedSurface
     border.width: 0
 

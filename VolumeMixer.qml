@@ -169,7 +169,7 @@ PluginComponent {
                             height: Theme.iconSize + Theme.spacingS * 2
                             anchors.verticalCenter: parent.verticalCenter
                             radius: (Theme.iconSize + Theme.spacingS * 2) / 2
-                            color: masterMuteArea.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12) : "transparent"
+                            color: masterMuteArea.containsMouse ? Theme.withAlpha(Theme.primary, Theme.stateLayerHover) : "transparent"
 
                             DRipple { id: masterMuteRipple; cornerRadius: parent.radius }
 
@@ -291,7 +291,7 @@ PluginComponent {
                         width: parent.width
                         height: 50
                         radius: Theme.cornerRadius
-                        color: activeDeviceArea.containsMouse ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08) : Theme.nestedSurface
+                        color: activeDeviceArea.containsMouse ? Theme.withAlpha(Theme.primary, Theme.stateLayerHover) : Theme.nestedSurface
 
                         DRipple { id: activeDeviceRipple; cornerRadius: activeDeviceCard.radius }
 
