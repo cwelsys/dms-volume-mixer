@@ -50,7 +50,7 @@ DSlider {
     }
 
     onSliderValueChanged: newValue => {
-        const snapped = root.isDragging ? Logic.softSnap(newValue, root.snapInterval, Logic.snapRadius, root.maximum) : newValue;
+        const snapped = root.isDragging ? Logic.softSnap(newValue, root._points, Logic.snapRadius, root.maximum) : newValue;
         root.value = snapped;
         root._request(snapped);
     }
@@ -84,7 +84,7 @@ DSlider {
             }
             const step = AudioService.wheelVolumeStep;
             const current = root._pending >= 0 ? root._pending : root.percent;
-            root._request(Logic.wheelSnap(current, wheel.angleDelta.y > 0 ? step : -step, root.snapInterval, Logic.snapRadius, root.maximum));
+            root._request(Logic.wheelSnap(current, wheel.angleDelta.y > 0 ? step : -step, root._points, Logic.snapRadius, root.maximum));
             wheel.accepted = true;
         }
     }

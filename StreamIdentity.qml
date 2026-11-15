@@ -29,12 +29,11 @@ QtObject {
             }));
     }
 
-    function _records(cache) {
-        if (cache && cache.__records)
-            return cache.__records;
+    readonly property var _records: identity._buildRecords(DesktopEntries.applications.values)
+
+    function _buildRecords(all) {
         var list = [];
         var index = ({});
-        var all = DesktopEntries.applications.values;
         for (var i = 0; i < all.length; i++) {
             var e = all[i];
             var rec = {
@@ -49,10 +48,7 @@ QtObject {
             list.push(rec);
             index[rec.id] = rec;
         }
-        var records = { list: list, index: index };
-        if (cache)
-            cache.__records = records;
-        return records;
+        return { list: list, index: index };
     }
 
     function _byId(name, records) {
@@ -81,14 +77,13 @@ QtObject {
             exe: identity.proc.exeFor(pid),
             binary: props["application.process.binary"] || "",
             parents: chain.slice(1).map(function(p) {
-                var stat = identity.proc.statFor(p);
-                return { exe: identity.proc.exeFor(p), binary: stat ? stat.comm : "" };
+                return { exe: identity.proc.exeFor(p) };
             })
         };
     }
 
-    function _resolveSignals(signals, cache) {
-        var records = identity._records(cache);
+    function _resolveSignals(signals) {
+        var records = identity._records;
         var r = Logic.resolveEntry(signals, records.list, function(name) {
             return identity._byId(name, records);
         });
@@ -100,7 +95,7 @@ QtObject {
         if (cache && (key in cache))
             return cache[key];
         var props = (node && node.properties) ? node.properties : ({});
-        var r = identity._resolveSignals(identity._signals(props), cache);
+        var r = identity._resolveSignals(identity._signals(props));
         var found = { appId: r.appId, entry: r.entry };
         if (cache)
             cache[key] = found;

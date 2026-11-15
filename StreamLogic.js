@@ -90,14 +90,14 @@ function _nearestPoint(points, value, radius, accept) {
     return best;
 }
 
-function softSnap(value, interval, radius, max) {
-    var p = _nearestPoint(snapPoints(interval, max), value, radius, function() { return true; });
+function softSnap(value, points, radius, max) {
+    var p = _nearestPoint(points, value, radius, function() { return true; });
     return Math.max(0, Math.min(max, p !== null ? p : value));
 }
 
-function wheelSnap(current, delta, interval, radius, max) {
+function wheelSnap(current, delta, points, radius, max) {
     var next = Math.max(0, Math.min(Math.max(max, current), current + delta));
-    var p = _nearestPoint(snapPoints(interval, max), next, radius, function(point) {
+    var p = _nearestPoint(points, next, radius, function(point) {
         return delta > 0 ? point > current : point < current;
     });
     return p !== null ? p : next;
@@ -259,11 +259,9 @@ function resolveEntry(signals, entries, byId) {
                 || matchByExec(entries, s.binary || props["application.process.binary"]);
         },
         function() {
-            return _firstEntry(parents, function(p) {
-                return (p.exe ? exeLookup(p.exe) : null) || matchByExec(entries, p.binary);
-            });
+            return _firstEntry(parents, function(p) { return p.exe ? exeLookup(p.exe) : null; });
         },
-        function() { return named["application.name"] ? null : matchByName(entries, stripExe(props["application.name"])); }
+        function() { return matchByName(entries, stripExe(props["application.name"])); }
     ];
     for (var i = 0; i < steps.length; i++) {
         var entry = steps[i]();
