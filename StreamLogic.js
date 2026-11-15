@@ -75,7 +75,7 @@ function snapPoints(interval, max) {
         for (var p = interval; p <= max; p += interval)
             points.push(p);
     }
-    if (max >= 100 && points.indexOf(100) < 0)
+    if (interval > 0 && max >= 100 && points.indexOf(100) < 0)
         points.push(100);
     return points.sort(function(a, b) { return a - b; });
 }
@@ -96,7 +96,7 @@ function softSnap(value, interval, radius, max) {
 }
 
 function wheelSnap(current, delta, interval, radius, max) {
-    var next = Math.max(0, Math.min(max, current + delta));
+    var next = Math.max(0, Math.min(Math.max(max, current), current + delta));
     var p = _nearestPoint(snapPoints(interval, max), next, radius, function(point) {
         return delta > 0 ? point > current : point < current;
     });

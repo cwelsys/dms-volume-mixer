@@ -25,9 +25,19 @@ DSlider {
         return root._travel * gap / span >= Style.sliderTickSize + Style.sliderHandleGap;
     }
 
+    property int _pending: -1
+
     function _request(next) {
-        if (next !== root.percent)
-            root.percentRequested(next);
+        if (next === root._pending)
+            return;
+        root._pending = next;
+        root.percentRequested(next);
+    }
+
+    onPercentChanged: root._pending = -1
+    onIsDraggingChanged: {
+        if (root.isDragging)
+            root._pending = -1;
     }
 
     minimum: 0
@@ -40,7 +50,7 @@ DSlider {
     }
 
     onSliderValueChanged: newValue => {
-        const snapped = Logic.softSnap(newValue, root.snapInterval, Logic.snapRadius, root.maximum);
+        const snapped = root.isDragging ? Logic.softSnap(newValue, root.snapInterval, Logic.snapRadius, root.maximum) : newValue;
         root.value = snapped;
         root._request(snapped);
     }
@@ -73,7 +83,8 @@ DSlider {
                 return;
             }
             const step = AudioService.wheelVolumeStep;
-            root._request(Logic.wheelSnap(root.percent, wheel.angleDelta.y > 0 ? step : -step, root.snapInterval, Logic.snapRadius, root.maximum));
+            const current = root._pending >= 0 ? root._pending : root.percent;
+            root._request(Logic.wheelSnap(current, wheel.angleDelta.y > 0 ? step : -step, root.snapInterval, Logic.snapRadius, root.maximum));
             wheel.accepted = true;
         }
     }
