@@ -27,7 +27,10 @@ PluginComponent {
     PwObjectTracker { objects: root.trackedStreamNodes }
 
     // Kept outside the popout so the /proc cache survives closing it.
-    StreamIdentity { id: streamIdentity }
+    StreamIdentity {
+        id: streamIdentity
+        readProcesses: root.pluginData?.identifyFromProcesses !== false
+    }
 
     function adjustVolumeByScroll(wheelEvent) {
         if (!AudioService.sink?.audio)
@@ -141,6 +144,7 @@ PluginComponent {
                 readonly property var streamNodes: root.trackedStreamNodes
                 readonly property var streamGroups: {
                     streamIdentity.procRevision;
+                    streamIdentity.readProcesses;
                     return streamIdentity.buildGroups(streamNodes);
                 }
                 readonly property var otherDevices: {

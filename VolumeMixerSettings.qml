@@ -40,6 +40,13 @@ PluginSettings {
         ]
     }
 
+    ToggleSetting {
+        settingKey: "identifyFromProcesses"
+        label: "Identify Apps From Processes"
+        description: "Reads /proc for processes playing audio to name games and wrapped apps"
+        defaultValue: true
+    }
+
     Column {
         id: deviceSelectorSetting
         width: parent.width

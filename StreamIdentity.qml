@@ -7,6 +7,7 @@ import "StreamLogic.js" as Logic
 QtObject {
     id: identity
 
+    property bool readProcesses: true
     readonly property ProcInfo proc: ProcInfo {}
     readonly property int procRevision: identity.proc.revision
     readonly property string _windowKey: CompositorService.isNiri
@@ -16,7 +17,7 @@ QtObject {
     })
 
     function _steamAppId(props) {
-        return identity.proc.steamAppIdFor(props["application.process.id"]);
+        return identity.readProcesses ? identity.proc.steamAppIdFor(props["application.process.id"]) : "";
     }
 
     function _windowAppId(props) {
@@ -24,9 +25,7 @@ QtObject {
             return "";
         var pid = props["application.process.id"];
         return Logic.niriAppIdForPid(identity._windows, pid)
-            || Logic.windowAppIdForPids(identity._windows, Logic.programChain(pid, function(p) {
-                return identity.proc.statFor(p);
-            }));
+            || (identity.readProcesses ? Logic.windowAppIdForPids(identity._windows, identity._chain(pid)) : "");
     }
 
     readonly property var _records: identity._buildRecords(DesktopEntries.applications.values)
@@ -65,16 +64,20 @@ QtObject {
         return null;
     }
 
-    function _signals(props) {
-        var pid = props["application.process.id"];
-        var chain = Logic.programChain(pid, function(p) {
+    function _chain(pid) {
+        return Logic.programChain(pid, function(p) {
             return identity.proc.statFor(p);
         });
+    }
+
+    function _signals(props) {
+        var pid = props["application.process.id"];
+        var chain = identity.readProcesses ? identity._chain(pid) : [];
         return {
             props: props,
             steamAppId: identity._steamAppId(props),
             windowAppId: identity._windowAppId(props),
-            exe: identity.proc.exeFor(pid),
+            exe: identity.readProcesses ? identity.proc.exeFor(pid) : "",
             binary: props["application.process.binary"] || "",
             parents: chain.slice(1).map(function(p) {
                 return { exe: identity.proc.exeFor(p) };
