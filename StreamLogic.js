@@ -113,6 +113,11 @@ function exeFromCmdline(text) {
     var args = String(text || "").split("\u0000").filter(function(a) { return a !== ""; });
     if (args.length === 0)
         return "";
+    if (args.length === 1) {
+        var flag = args[0].search(/ --?[A-Za-z]/);
+        if (flag > 0)
+            args = [args[0].substring(0, flag)];
+    }
     var exe = _basename(args[0]);
     if (/^wine(64)?(-preloader)?$/i.test(exe)) {
         for (var i = 1; i < args.length; i++) {
@@ -152,6 +157,10 @@ function _isPlain(entry) {
     return _programArgs(entry).slice(1).every(function(a) { return /^%[a-zA-Z]$/.test(a); });
 }
 
+function _hasTarget(entry) {
+    return _programArgs(entry).slice(1).some(function(a) { return !/^%[a-zA-Z]$/.test(a) && a.charAt(0) !== "-"; });
+}
+
 function uniqueBy(entries, pred) {
     var found = null;
     for (var i = 0; i < (entries || []).length; i++) {
@@ -177,7 +186,7 @@ function matchByExec(entries, program) {
         return null;
     var same = (entries || []).filter(function(e) { return execProgram(e) === p; });
     if (same.length === 1)
-        return same[0];
+        return _hasTarget(same[0]) ? null : same[0];
     return uniqueBy(same, _isPlain);
 }
 
@@ -231,7 +240,9 @@ function resolveEntry(signals, entries, byId) {
     var steps = [
         function() {
             return _firstEntry([props["pipewire.access.portal.app_id"], props["application.id"],
-                props["application.icon-name"], props["application.icon_name"]], lookup);
+                props["application.icon-name"], props["application.icon_name"]], function(n) {
+                return isEngineName(n) ? null : lookup(n);
+            });
         },
         function() {
             var m = isNumericSteamId(steam) ? steamEntryMatcher(steam) : null;
